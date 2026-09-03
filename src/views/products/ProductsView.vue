@@ -1,32 +1,76 @@
 <script setup>
+import { computed } from 'vue'
+import { useProductStore } from '@/stores/productStore'
+import ProductSearch from '@/components/products/ProductSearch.vue'
+import ProductFilters from '@/components/products/ProductFilters.vue'
+import ProductCard from '@/components/cards/ProductCard.vue'
+
+// Inisialisasi Store
+const { filteredProducts, state, clearFilters } = useProductStore()
+
+// State Data (Reactive ke filter search dan kategori)
+const products = computed(() => filteredProducts.value)
+
 </script>
 
 <template>
-  <div class="py-16 md:py-24 px-4 bg-gray-50 min-h-[80vh] flex flex-col items-center justify-center pt-24 md:pt-24">
-    <div class="container mx-auto max-w-4xl text-center">
-      <div class="inline-block px-4 py-1.5 rounded-full bg-slate-200 text-[#737474] font-semibold text-xs md:text-sm mb-6">
-        Product Categories
-      </div>
-      <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-800 mb-6">Katalog Produk</h1>
-      <div class="w-16 h-1 bg-[#737474] mx-auto mb-8"></div>
-      <p class="text-slate-600 mb-12 text-base md:text-lg px-2">Telusuri lebih dari <strong class="text-slate-800">>150 SKU varian produk</strong> dari supplier terverifikasi kami (Furniture, Komoditi Alam, dan Kerajinan Seni). Harga berdasarkan Quotation.</p>
+  <div class="pt-24 pb-16 md:py-32 px-4 bg-gray-50 min-h-screen">
+    <div class="container mx-auto max-w-7xl">
       
-      <div class="bg-white p-8 sm:p-12 md:p-16 rounded-3xl border border-gray-100 shadow-xl relative overflow-hidden mx-2 md:mx-0">
-        <!-- Decor -->
-        <div class="absolute -top-10 -right-10 w-40 h-40 bg-gray-50 rounded-full opacity-50 hidden sm:block"></div>
-        <div class="absolute -bottom-10 -left-10 w-40 h-40 bg-gray-50 rounded-full opacity-50 hidden sm:block"></div>
+      <!-- Header Katalog -->
+      <div class="text-center mb-10 md:mb-16 mt-8">
+        <h1 class="text-3xl sm:text-4xl md:text-5xl font-black text-slate-800 mb-6">Katalog <span class="text-[#737474]">Produk</span></h1>
+        <div class="w-16 h-1 bg-[#737474] mx-auto mb-6"></div>
+        <p class="text-slate-600 text-base md:text-lg max-w-2xl mx-auto px-2">
+          Eksplorasi >150 item varian komoditas dan hasil manufaktur berkualitas internasional. Dapatkan harga khusus grosiran melalui Quotation.
+        </p>
+      </div>
+
+      <!-- Aksesoris Filter & Search -->
+      <div class="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6 mb-10">
+        <!-- Kolom Pencarian -->
+        <div class="w-full md:w-1/3">
+          <ProductSearch />
+        </div>
         
-        <div class="relative z-10">
-          <div class="text-5xl md:text-7xl mb-6">📦</div>
-          <h3 class="text-xl md:text-2xl font-bold text-slate-800 mb-4">E-Katalog Sedang Disiapkan</h3>
-          <p class="text-slate-500 leading-relaxed text-sm md:text-base max-w-lg mx-auto">Sistem inventaris kami yang terintegrasi (dengan kapabilitas multi-currency dan approval B2B) sedang dimantapkan.</p>
-          <p class="text-slate-500 leading-relaxed text-sm md:text-base max-w-lg mx-auto mt-4 font-medium">Silakan hubungi kami untuk mendapatkan dokumen Price List / Katalog PDF via WhatsApp.</p>
-          <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
-            <RouterLink to="/" class="px-6 py-3 md:px-8 bg-slate-100 text-slate-700 font-bold rounded-lg hover:bg-slate-200 transition">Kembali ke Beranda</RouterLink>
-            <a href="/#contact" class="px-6 py-3 md:px-8 bg-[#737474] text-white font-bold rounded-lg hover:bg-slate-700 transition">Request Katalog PDF</a>
-          </div>
+        <!-- Tab Kategori -->
+        <div class="w-full md:w-auto overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+          <ProductFilters />
         </div>
       </div>
+
+      <!-- Informasi Hasil Pencarian -->
+      <div class="mb-6 flex justify-between items-center text-sm font-semibold text-slate-500 px-2" v-if="state.searchQuery || state.activeCategory !== 'all'">
+        <p>Menampilkan <span class="text-slate-800">{{ Object.keys(products).length }}</span> produk.</p>
+        <button @click="clearFilters" class="text-red-500 hover:text-red-600 underline">Reset Semua Filter</button>
+      </div>
+
+      <!-- Area Tampilan Data (Grid) -->
+      <div v-if="products && Object.keys(products).length > 0" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
+         <ProductCard v-for="product in products" :key="product.id" :product="product" />
+      </div>
+
+      <!-- Empty State (Jika barang tidak ada) -->
+      <div v-else class="text-center bg-white py-24 rounded-3xl border border-gray-100 shadow-sm mt-8">
+        <div class="text-6xl mb-6">🏜️</div>
+        <h3 class="text-2xl font-bold text-slate-800 mb-2">Produk Tidak Ditemukan</h3>
+        <p class="text-slate-500 max-w-md mx-auto mb-8">Maaf, kami tidak menemukan produk berdasarkan kategori atau kata kunci yang Anda masukkan.</p>
+        <button @click="clearFilters" class="bg-[#737474] text-white px-8 py-3 rounded-lg font-bold hover:bg-slate-700 transition">
+          Reset Filter & Pencarian
+        </button>
+      </div>
+
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Menyembunyikan scrollbar di tab filter khusus untuk mobile namun fungsionalitas scroll/geser tetap hidup */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none; 
+  scrollbar-width: none;  
+}
+</style>

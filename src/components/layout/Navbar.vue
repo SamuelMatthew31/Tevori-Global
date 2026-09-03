@@ -41,7 +41,7 @@ const scrollToSection = (hash) => {
       <RouterLink to="/" class="text-xl font-extrabold tracking-wider text-[#737474] uppercase relative z-50 shrink-0" @click="closeMobileMenu">
         {{ companyInfo.short_name }}
       </RouterLink>
-      
+
       <!-- Desktop Menu -->
       <ul class="hidden lg:flex space-x-6 text-[13px] font-bold text-slate-600 items-center">
         <li><RouterLink to="/" class="hover:text-[#737474] transition">Beranda</RouterLink></li>
