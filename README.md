@@ -1,164 +1,128 @@
-# PT Tevori Global — Company Profile & Digital Sourcing Portal
+# PT Tevori Global - Company Profile & Digital Sourcing Portal
 
-> **Product Requirement Document (PRD) & Developer Onboarding Guide**  
-> *Official repository for PT Tevori Global web platform prototype.*
-
----
-
-## 1. Project Overview & Business Background
-
-**PT Tevori Global** is a professional export and buyer's agent enterprise headquartered in Denpasar, Bali, Indonesia. The company specializes in sourcing high-quality Indonesian commodities and manufactured goods, bridging verified local suppliers and manufacturers with international buyers worldwide.
-
-- **Tagline:** *Your Trusted Partner in Global Sourcing*
-- **Primary Pillars:**
-  1. **Furniture:** Custom craftsmanship and bulk furniture procurement.
-  2. **Komoditi Alam (Natural Commodities):** Premium natural raw materials and agricultural commodities.
-  3. **Kerajinan Seni (Authentic Arts & Crafts):** Handcrafted decorative items and authentic Indonesian artisan goods.
-- **Brand Color:** #737474 (Sophisticated Neutral Slate / Gray)
+> **Architecture Flow, CMS Integration & Developer Guide**  
+> *Official repository for PT Tevori Global headless CMS & Nuxt 3 frontend.*
 
 ---
 
-## 2. Product Requirement Document (PRD)
+## 1. System Architecture Flow
 
-### 2.1. Objectives & Goals
-- Present a **modern, minimalist, and uncluttered** digital presence that communicates reliability, trust, and international standard compliance.
-- Facilitate seamless B2B & B2C inquiries and **Request Quotation (RFQ)** workflows via direct WhatsApp & email communication channels.
-- Establish a clean, scalable architectural foundation ready for Phase 2 (Fullstack dynamic catalog, inventory tracking, multi-currency pricing, and quotation approval systems).
+Aplikasi ini mengadopsi arsitektur modern **Headless CMS Jamstack / SSR**:
 
-### 2.2. Target Audience
-- **International B2B Importers & Retailers:** Looking for dependable procurement partners in Indonesia with quality assurance and export handling capabilities.
-- **B2C & Direct Clients:** Seeking bespoke orders or smaller volume procurements.
-- **Local Verified Suppliers & Artisans:** Partnering to distribute their products globally.
+```
+[ Your Admin Panel ] ──(CRUD Updates)──> [ Sanity Free Cloud API ] ──> [ Nuxt Frontend (Vercel) ] ──> [ Global B2B Buyer ]
+```
 
-### 2.3. Design & UX Principles
-- **Minimalist & Breathing Room:** Ample whitespace to avoid cramped layouts.
-- **Direct & Clear Navigation:** Smooth scrolling to key sections (*Beranda*, *Tentang Kami*, *Layanan*, *Kontak*) and dedicated routes for *Katalog Produk*.
-- **Responsive & Mobile-First:** Fluid layouts across smartphone, tablet, and desktop screens.
+### Penjelasan Alur (Flow):
 
-### 2.4. Phased Roadmap
+1. **[ Your Admin Panel ] (Sanity Studio v3):**
+   - Panel dashboard visual untuk tim internal PT Tevori Global melakukan Create, Read, Update, dan Delete (CRUD) konten tanpa menyentuh kode.
+   - Mengelola katalog produk ekspor, artikel edukasi/insights, profil perusahaan, testimonial, dan kategori bisnis.
+   - Dijalankan secara lokal dengan `npm run studio:dev` atau di-deploy gratis ke `*.sanity.studio` dengan `npm run studio:deploy`.
 
-| Phase | Scope | Status |
-|---|---|---|
-| **Phase 1 (Current)** | Interactive Company Profile Prototype, Static Data Architecture, Sourcing Showcases, WhatsApp RFQ Integration | Complete |
-| **Phase 2 (Future)** | Fullstack Backend (REST/GraphQL API), Dynamic Product Catalog (>150 SKUs), Multi-currency Converter, B2B Quotation Approval Workflow | Planned |
+2. **[ Sanity Free Cloud API ] (Sanity Content Lake):**
+   - Database cloud global gratis dan real-time dari Sanity.io yang menyimpan dokumen JSON, asset gambar, dan media.
+   - Menyediakan GraphQL & GROQ query API super cepat dengan CDN cache global.
 
----
+3. **[ Nuxt Frontend (Vercel) ]:**
+   - Frontend modern berbasis **Nuxt 3** + **Tailwind CSS v4** yang di-deploy di Vercel.
+   - Mendukung Server-Side Rendering (SSR) & Incremental Static Regeneration (ISR) untuk kecepatan loading maksimal dan SEO optimal bagi calon buyer internasional di Google.
+   - Menggunakan `@nuxtjs/sanity` dan GROQ untuk menarik data langsung dari Sanity Cloud API secara real-time.
+   - Dilengkapi **Graceful Fallback**: Jika koneksi Sanity offline atau credential belum diisi, website otomatis menggunakan data lokal sehingga sistem tidak pernah crash/blank.
 
-## 3. Tech Stack
-
-- **Framework:** [Vue 3](https://vuejs.org/) (Composition API, <script setup>)
-- **Build Tool:** [Vite 8](https://vite.dev/)
-- **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
-- **Routing:** [Vue Router 5](https://router.vuejs.org/)
-- **Icons:** [Lucide Vue Next](https://lucide.dev/)
-- **State Management (Ready):** Modular Store architecture under src/stores/
+4. **[ Global B2B Buyer ]:**
+   - Pengalaman belanja B2B yang bersih, responsif di semua perangkat (mobile, tablet, desktop).
+   - Dilengkapi tombol otomatis **Request Quotation (RFQ) via WhatsApp** dengan pesan yang telah terformat rapi sesuai SKU barang.
 
 ---
 
-## 4. Project Directory Structure
+## 2. Struktur Direktori & Skema CMS
 
-`	ext
+```
 tevori_global/
-├── public/                     # Static assets (favicon, direct downloads)
-├── src/
-│   ├── assets/
-│   │   ├── fonts/              # Custom typography assets
-│   │   ├── images/             # Static brand images, placeholders, and backgrounds
-│   │   └── styles/
-│   │       ├── Main.css        # Tailwind imports & master styles
-│   │       ├── Utilities.css   # Custom CSS helper classes
-│   │       └── Variables.css   # CSS Variables (e.g., brand colors)
-│   ├── components/
-│   │   ├── cards/              # Reusable card UI (ProductCard, ServiceCard, etc.)
-│   │   ├── common/             # Base UI elements (BaseButton, BaseInput, LoadingSpinner, etc.)
-│   │   ├── forms/              # Form components (ContactForm, InquiryForm)
-│   │   ├── layout/             # Master layout parts (Navbar.vue, Footer.vue)
-│   │   └── products/           # Product-specific components (ProductGrid, ProductFilters, etc.)
-│   ├── composables/            # Shared Vue composables (useProducts, useScroll, useSearch)
-│   ├── constants/              # Route & category constants
-│   ├── data/                   # Mock & static business datasets (company.js, services.js, etc.)
-│   ├── router/                 # Vue Router configuration (index.js)
-│   ├── sections/
-│   │   └── home/               # Modular landing page sections (Hero, About, Services, Contact)
-│   ├── services/               # API service integration layers (inquiryService, productService)
-│   ├── stores/                 # Pinia / Reactive App state stores (appStore, productStore)
-│   ├── utils/                  # Helper utilities and formatters
-│   ├── views/                  # Route page views (HomeView, ProductsView, NotFoundView)
-│   ├── App.vue                 # Master application root component
-│   └── main.js                 # App entry point
-├── package.json                # Project dependencies and script scripts
-└── vite.config.js              # Vite configuration with Tailwind CSS plugin
-`
+├── sanity/                     # Konfigurasi Schema Sanity Studio (Admin Panel)
+│   ├── schemas/
+│   │   ├── category.js         # Skema Kategori Produk (Furniture, Komoditi, Kerajinan)
+│   │   ├── product.js          # Skema Katalog Produk Ekspor (SKU, Specs, MOQ, Foto)
+│   │   ├── insight.js          # Skema Artikel Berita & Regulasi Ekspor
+│   │   ├── companyInfo.js      # Skema Profil & Kontak Perusahaan
+│   │   ├── testimonial.js      # Skema Review & Testimoni Mitra
+│   │   ├── service.js          # Skema 3 Pilar Layanan Utama
+│   │   └── index.js            # Registrasi seluruh schema
+│   ├── sanity.config.js        # Konfigurasi Sanity Studio v3 & Plugin Vision
+│   └── sanity.cli.js           # Konfigurasi CLI Sanity
+├── src/                        # Nuxt 3 Frontend Codebase
+│   ├── app.vue                 # Master layout template (Navbar, NuxtPage, Footer)
+│   ├── pages/                  # Routing otomatis Nuxt 3
+│   │   ├── index.vue           # Beranda utama (One-page landing section)
+│   │   ├── products/
+│   │   │   └── index.vue       # Galeri Katalog interaktif dengan Filter & Pencarian
+│   │   └── insights/
+│   │       ├── index.vue       # Daftar artikel wawasan industri
+│   │       └── [slug].vue      # Halaman detail baca artikel
+│   ├── components/             # Komponen UI modular
+│   │   ├── cards/              # ProductCard, ServiceCard, TestimonialCard, InsightCard
+│   │   ├── layout/             # Navbar (dengan burger menu & smooth scroll) & Footer
+│   │   └── products/           # ProductSearch, ProductFilters
+│   ├── composables/
+│   │   └── useSanityData.js    # Data-fetching GROQ ke Sanity API dengan fallback
+│   ├── stores/
+│   │   └── productStore.js     # State management reactive untuk search & filter
+│   ├── utils/
+│   │   ├── sanity.js           # Sanity Client & Image URL Builder
+│   │   └── formatters.js       # Generator pesan WhatsApp RFQ & pemotong teks
+│   └── data/                   # Mock fallback data (High-fidelity offline dataset)
+├── nuxt.config.js              # Konfigurasi Nuxt 3, Tailwind v4, & @nuxtjs/sanity
+└── .env.example                # Template variabel environment Sanity
+```
 
 ---
 
-## 5. Getting Started on Localhost
+## 3. Panduan Menjalankan Project
 
-Follow these instructions to set up and run the project locally on your machine.
+### Prasyarat:
+- **Node.js**: Versi `>= 18.0.0` (Rekomendasi v20+ atau v22+)
+- **NPM**: Versi `>= 9.0.0`
 
-### 5.1. Prerequisites
-Ensure you have the following installed:
-- **Node.js**: Version 20.x, 22.x, or >=24.12.0
-- **npm**: Version 9.x or higher (bundled with Node.js)
+### Langkah 1: Install Dependencies
+```bash
+npm install
+```
 
-Verify your installation:
-`ash
-node -v
-npm -v
-`
+### Langkah 2: Setup Environment Variables
+Salin file template `.env.example` menjadi `.env`:
+```bash
+cp .env.example .env
+```
+Isi dengan Project ID Sanity Anda:
+```env
+SANITY_PROJECT_ID=your-project-id
+SANITY_DATASET=production
+SANITY_API_VERSION=2024-01-01
+```
+*(Catatan: Jika belum memiliki akun Sanity, biarkan default, website akan otomatis berjalan menggunakan sistem Local Fallback)*.
 
-### 5.2. Installation
-
-1. Navigate to the project directory:
-   `ash
-   cd src/tevori_global
-   `
-
-2. Install all required dependencies:
-   `ash
-   npm install
-   `
-
-### 5.3. Running the Development Server
-
-Start the local development server with Hot Module Replacement (HMR):
-`ash
+### Langkah 3: Menjalankan Nuxt Frontend
+```bash
 npm run dev
-`
+```
+Buka browser pada: `http://localhost:3000`
 
-Once started, open your browser and access:
-`	ext
-http://localhost:5173
-`
-
-### 5.4. Building for Production
-
-To build the production-ready static assets:
-`ash
-npm run build
-`
-Output files will be generated in the dist/ directory.
-
-### 5.5. Previewing Production Build
-
-To preview the built production bundle locally:
-`ash
-npm run preview
-`
+### Langkah 4: Menjalankan Admin Panel (Sanity Studio)
+```bash
+npm run studio:dev
+```
+Buka browser pada: `http://localhost:3333`  
+Di panel ini, tim admin dapat menambah, mengedit, dan menghapus produk, artikel, dan profil PT Tevori Global secara instan!
 
 ---
 
-## 6. Developer Guidelines & Extension Rules
+## 4. Deploy ke Vercel (Production)
 
-1. **Brand Consistency:** Always respect the brand primary color #737474 and keep UI elements clean and non-cluttered.
-2. **Modularity:** When adding new sections to the home page, create the component under src/sections/home/ and import it into src/views/HomeView.vue.
-3. **Data Management:** Static company details and data points should be maintained inside src/data/company.js or src/data/services.js rather than hardcoded into template tags.
-4. **Responsive Testing:** Verify your modifications on mobile (375px+), tablet (768px+), and desktop (1024px+) viewports.
-
----
-
-## 7. Point of Contact (Project PIC)
-
-- **PIC Name:** Vigor (Managing Director)
-- **WhatsApp / Phone:** 0857 4635 8310
-- **Location:** Jalan Bedahulu, Denpasar, Bali, Indonesia 80115
+1. Push repository ini ke GitHub / GitLab.
+2. Buka dashboard [Vercel](https://vercel.com) dan pilih **Import Project**.
+3. Vercel akan otomatis mendeteksi framework **Nuxt**.
+4. Masukkan **Environment Variables** di Vercel:
+   - `SANITY_PROJECT_ID`: ID project Sanity Anda
+   - `SANITY_DATASET`: `production`
+5. Klik **Deploy**! Website akan live dalam hitungan detik dengan performa edge global.
