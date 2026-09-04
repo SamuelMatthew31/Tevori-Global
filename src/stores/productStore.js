@@ -1,11 +1,12 @@
 import { ref, computed } from 'vue'
 import { productsList } from '@/data/products'
 
-// State Global Sederhana (tanpa Pinia untuk saat ini agar ringan disisi prototype)
+// State Global Sederhana
 const state = ref({
   products: productsList,
   activeCategory: 'all',
-  searchQuery: ''
+  searchQuery: '',
+  isLoading: false,
 })
 
 // Actions / Methods
@@ -16,6 +17,12 @@ export const useProductStore = () => {
 
   const setSearchQuery = (query) => {
     state.value.searchQuery = query
+  }
+
+  const setProducts = (newProducts) => {
+    if (Array.isArray(newProducts) && newProducts.length > 0) {
+      state.value.products = newProducts
+    }
   }
 
   const clearFilters = () => {
@@ -36,8 +43,9 @@ export const useProductStore = () => {
     if (state.value.searchQuery) {
       const lowerQuery = state.value.searchQuery.toLowerCase()
       result = result.filter(item => 
-        item.name.toLowerCase().includes(lowerQuery) || 
-        item.id.toLowerCase().includes(lowerQuery)
+        (item.name && item.name.toLowerCase().includes(lowerQuery)) || 
+        (item.id && item.id.toLowerCase().includes(lowerQuery)) ||
+        (item.short_desc && item.short_desc.toLowerCase().includes(lowerQuery))
       )
     }
 
@@ -48,7 +56,8 @@ export const useProductStore = () => {
     state,
     setActiveCategory,
     setSearchQuery,
+    setProducts,
     clearFilters,
-    filteredProducts
+    filteredProducts,
   }
 }
