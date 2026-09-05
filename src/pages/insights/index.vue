@@ -1,14 +1,9 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useSanityData } from '@/composables/useSanityData'
+import { ref } from 'vue'
+import { insightsList } from '@/data/insights'
 import InsightCard from '@/components/cards/InsightCard.vue'
 
-const { getInsights, loading } = useSanityData()
-const posts = ref([])
-
-onMounted(async () => {
-  posts.value = await getInsights()
-})
+const posts = ref(insightsList)
 </script>
 
 <template>

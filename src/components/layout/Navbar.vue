@@ -1,9 +1,10 @@
 <script setup>
 import { ref } from 'vue'
-import { RouterLink, useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { companyInfo } from '@/data/company'
 
 const isMobileMenuOpen = ref(false)
+const route = useRoute()
 const router = useRouter()
 
 const toggleMobileMenu = () => {
@@ -23,13 +24,29 @@ const closeMobileMenu = () => {
 // Smooth scrolling function with offset for the fixed navbar
 const scrollToSection = (hash) => {
   closeMobileMenu()
-  if (window.location.pathname !== '/') {
-    router.push({ path: '/', hash: hash })
+
+  if (hash === '#home') {
+    if (route.path !== '/') {
+      router.push('/')
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    }
+    return
+  }
+
+  if (route.path !== '/') {
+    router.push({ path: '/', hash }).then(() => {
+      setTimeout(() => {
+        const el = document.querySelector(hash)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' })
+        }
+      }, 350)
+    })
   } else {
     const el = document.querySelector(hash)
     if (el) {
-      const y = el.getBoundingClientRect().top + window.scrollY - 64 // 64px is h-16
-      window.scrollTo({ top: y, behavior: 'smooth' })
+      el.scrollIntoView({ behavior: 'smooth' })
     }
   }
 }
@@ -38,20 +55,20 @@ const scrollToSection = (hash) => {
 <template>
   <nav class="bg-white text-slate-800 fixed w-full z-50 top-0 shadow-sm border-b border-gray-100 h-16 flex items-center">
     <div class="container mx-auto px-4 flex justify-between items-center max-w-7xl">
-      <RouterLink to="/" class="text-xl font-extrabold tracking-wider text-[#737474] uppercase relative z-50 shrink-0" @click="closeMobileMenu">
+      <a href="#home" class="text-xl font-extrabold tracking-wider text-[#737474] uppercase relative z-50 shrink-0 cursor-pointer" @click.prevent="scrollToSection('#home')">
         {{ companyInfo.short_name }}
-      </RouterLink>
+      </a>
 
       <!-- Desktop Menu -->
       <ul class="hidden lg:flex space-x-6 text-[13px] font-bold text-slate-600 items-center">
-        <li><RouterLink to="/" class="hover:text-[#737474] transition">Beranda</RouterLink></li>
-        <li><a href="#about" @click.prevent="scrollToSection('#about')" class="hover:text-[#737474] transition">Tentang Kami</a></li>
-        <li><a href="#services" @click.prevent="scrollToSection('#services')" class="hover:text-[#737474] transition">Layanan</a></li>
-        <li><a href="#how-we-work" @click.prevent="scrollToSection('#how-we-work')" class="hover:text-[#737474] transition">Cara Kerja</a></li>
-        <li><a href="#testimonials" @click.prevent="scrollToSection('#testimonials')" class="hover:text-[#737474] transition">Testimoni</a></li>
-        <li><a href="#insights" @click.prevent="scrollToSection('#insights')" class="hover:text-[#737474] transition">Berita</a></li>
-        <li><RouterLink to="/products" class="hover:text-[#737474] transition">Katalog</RouterLink></li>
-        <li><a href="#contact" @click.prevent="scrollToSection('#contact')" class="bg-[#737474] text-white px-4 py-2 rounded font-semibold hover:bg-slate-700 transition">Kontak</a></li>
+        <li><a href="#home" @click.prevent="scrollToSection('#home')" class="hover:text-[#737474] transition cursor-pointer">Beranda</a></li>
+        <li><a href="#about" @click.prevent="scrollToSection('#about')" class="hover:text-[#737474] transition cursor-pointer">Tentang Kami</a></li>
+        <li><a href="#services" @click.prevent="scrollToSection('#services')" class="hover:text-[#737474] transition cursor-pointer">Layanan</a></li>
+        <li><a href="#how-we-work" @click.prevent="scrollToSection('#how-we-work')" class="hover:text-[#737474] transition cursor-pointer">Cara Kerja</a></li>
+        <li><a href="#testimonials" @click.prevent="scrollToSection('#testimonials')" class="hover:text-[#737474] transition cursor-pointer">Testimoni</a></li>
+        <li><a href="#insights" @click.prevent="scrollToSection('#insights')" class="hover:text-[#737474] transition cursor-pointer">Berita</a></li>
+        <li><NuxtLink to="/products" class="hover:text-[#737474] transition">Katalog</NuxtLink></li>
+        <li><a href="#contact" @click.prevent="scrollToSection('#contact')" class="bg-[#737474] text-white px-4 py-2 rounded font-semibold hover:bg-slate-700 transition cursor-pointer">Kontak</a></li>
       </ul>
 
       <!-- Mobile Menu Button -->
@@ -88,14 +105,14 @@ const scrollToSection = (hash) => {
     >
       <div v-if="isMobileMenuOpen" class="fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-2xl z-40 lg:hidden flex flex-col pt-24 px-8 overflow-y-auto">
         <ul class="flex flex-col space-y-5 text-lg font-bold text-slate-800">
-          <li><RouterLink to="/" class="block hover:text-[#737474] transition" @click="closeMobileMenu">Beranda</RouterLink></li>
-          <li class="border-t border-gray-100 pt-5"><a href="#about" class="block hover:text-[#737474] transition" @click.prevent="scrollToSection('#about')">Tentang Kami</a></li>
-          <li class="border-t border-gray-100 pt-5"><a href="#services" class="block hover:text-[#737474] transition" @click.prevent="scrollToSection('#services')">Layanan Kami</a></li>
-          <li class="border-t border-gray-100 pt-5"><a href="#how-we-work" class="block hover:text-[#737474] transition" @click.prevent="scrollToSection('#how-we-work')">Cara Kerja</a></li>
-          <li class="border-t border-gray-100 pt-5"><a href="#testimonials" class="block hover:text-[#737474] transition" @click.prevent="scrollToSection('#testimonials')">Testimoni Klien</a></li>
-          <li class="border-t border-gray-100 pt-5"><a href="#insights" class="block hover:text-[#737474] transition" @click.prevent="scrollToSection('#insights')">Berita & Artikel</a></li>
-          <li class="border-t border-gray-100 pt-5"><RouterLink to="/products" class="block hover:text-[#737474] transition" @click="closeMobileMenu">Produk / Katalog</RouterLink></li>
-          <li class="border-t border-gray-100 pt-5"><a href="#contact" class="block hover:text-[#737474] transition" @click.prevent="scrollToSection('#contact')">Hubungi Kami</a></li>
+          <li><a href="#home" class="block hover:text-[#737474] transition cursor-pointer" @click.prevent="scrollToSection('#home')">Beranda</a></li>
+          <li class="border-t border-gray-100 pt-5"><a href="#about" class="block hover:text-[#737474] transition cursor-pointer" @click.prevent="scrollToSection('#about')">Tentang Kami</a></li>
+          <li class="border-t border-gray-100 pt-5"><a href="#services" class="block hover:text-[#737474] transition cursor-pointer" @click.prevent="scrollToSection('#services')">Layanan Kami</a></li>
+          <li class="border-t border-gray-100 pt-5"><a href="#how-we-work" class="block hover:text-[#737474] transition cursor-pointer" @click.prevent="scrollToSection('#how-we-work')">Cara Kerja</a></li>
+          <li class="border-t border-gray-100 pt-5"><a href="#testimonials" class="block hover:text-[#737474] transition cursor-pointer" @click.prevent="scrollToSection('#testimonials')">Testimoni Klien</a></li>
+          <li class="border-t border-gray-100 pt-5"><a href="#insights" class="block hover:text-[#737474] transition cursor-pointer" @click.prevent="scrollToSection('#insights')">Berita & Artikel</a></li>
+          <li class="border-t border-gray-100 pt-5"><NuxtLink to="/products" class="block hover:text-[#737474] transition" @click="closeMobileMenu">Produk / Katalog</NuxtLink></li>
+          <li class="border-t border-gray-100 pt-5"><a href="#contact" class="block hover:text-[#737474] transition cursor-pointer" @click.prevent="scrollToSection('#contact')">Hubungi Kami</a></li>
         </ul>
         <div class="mt-8 pb-10">
             <a :href="'https://wa.me/62' + companyInfo.phone.replace(/\s/g, '').replace(/^0/, '')" target="_blank" class="block w-full text-center bg-[#737474] text-white py-4 rounded-xl font-bold hover:bg-slate-700 transition shadow-lg" @click="closeMobileMenu">

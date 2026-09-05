@@ -4,7 +4,7 @@ import ServiceCard from '@/components/cards/ServiceCard.vue'
 </script>
 
 <template>
-  <section class="py-16 md:py-24 px-4 bg-slate-900 border-t border-slate-800">
+  <section id="services" class="scroll-mt-20 py-16 md:py-24 px-4 bg-slate-900 border-t border-slate-800">
     <div class="container mx-auto max-w-6xl">
       <!-- Section Header -->
       <div class="text-center mb-12 md:mb-16">

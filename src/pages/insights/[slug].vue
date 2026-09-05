@@ -1,17 +1,17 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useSanityData } from '@/composables/useSanityData'
+import { insightsList } from '@/data/insights'
 
 const route = useRoute()
 const router = useRouter()
-const { getInsightBySlug } = useSanityData()
 
 const post = ref(null)
 const loading = ref(true)
 
-onMounted(async () => {
-  post.value = await getInsightBySlug(route.params.slug)
+onMounted(() => {
+  const found = insightsList.find(item => item.slug === route.params.slug)
+  post.value = found || null
   loading.value = false
 })
 

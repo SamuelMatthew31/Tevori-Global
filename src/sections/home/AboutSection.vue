@@ -3,7 +3,7 @@ import { companyInfo } from '@/data/company'
 </script>
 
 <template>
-  <section class="py-16 md:py-24 px-4 bg-white relative">
+  <section id="about" class="scroll-mt-20 py-16 md:py-24 px-4 bg-white relative">
     <div class="container mx-auto max-w-6xl">
       <div class="text-center mb-12 md:mb-16 max-w-3xl mx-auto px-2">
         <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-6">Tentang <span class="text-[#737474]">Kami</span></h2>
