@@ -3,6 +3,13 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2024-11-01',
   srcDir: 'src/',
+  
+  // Explicitly tell Nuxt that the public folder lives at the root, 
+  // outside of srcDir, so Vite Dev Server and Vercel both properly serve it!
+  dir: {
+    public: '../public'
+  },
+  
   css: ['~/assets/styles/Main.css'],
 
   vite: {

@@ -9,7 +9,7 @@ backend:
 local_backend: true
 
 # Folder where Decap CMS saves uploaded media files (relative to git repository root)
-media_folder: "src/public/images/uploads"
+media_folder: "public/images/uploads"
 # Public URL path the browser uses to resolve images
 public_folder: "/images/uploads"
 
