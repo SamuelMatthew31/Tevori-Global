@@ -1,4 +1,6 @@
 <script setup>
+import { onMounted } from 'vue'
+
 definePageMeta({
   layout: false // Disable the main website layout (navbar, footer, etc.) for the CMS panel
 })
@@ -9,18 +11,24 @@ useHead({
     { name: 'robots', content: 'noindex' }
   ],
   link: [
-    // This tells Decap CMS exactly where to find the configuration file on Vercel
     { rel: 'cms-config-url', type: 'text/yaml', href: '/admin/config.yml' }
-  ],
-  script: [
-    { src: 'https://unpkg.com/decap-cms@^3.1.0/dist/decap-cms.js' }
   ]
+})
+
+// Wait until Vue has completely finished hydrating the page DOM
+// before we let Decap CMS inject its heavy React payload. 
+// Otherwise, Vue and React will fight over the DOM and cause a blank screen!
+onMounted(() => {
+  const script = document.createElement('script')
+  script.src = 'https://unpkg.com/decap-cms@^3.1.0/dist/decap-cms.js'
+  script.async = true
+  document.body.appendChild(script)
 })
 </script>
 
 <template>
-  <div>
-    <!-- Decap CMS will automatically mount and render its heavy React UI over this div once the script loads -->
+  <div id="nc-root">
+    <!-- Decap CMS will render its UI exactly here -->
   </div>
 </template>
 
