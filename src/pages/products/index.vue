@@ -9,9 +9,10 @@ useHead({
   ]
 })
 
-// 1. Native Vite Glob Import: Read all JSON files from content/products/
-// This pulls ONLY the real data created inside the Decap CMS panel
-const productModules = import.meta.glob('/content/products/*.json', { eager: true })
+// 1. Native Vite Glob Import
+// Fix: We need to traverse exactly 3 levels up from src/pages/products/index.vue to hit the root content folder
+// src/pages/products/ -> ../../.. -> root -> /content/products
+const productModules = import.meta.glob('../../../content/products/*.json', { eager: true })
 
 const products = computed(() => {
   return Object.keys(productModules).map((filePath) => {

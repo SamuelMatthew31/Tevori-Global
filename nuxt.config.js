@@ -25,5 +25,11 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' }
       ]
     }
+  },
+
+  // Tell Nuxt Router to ignore /admin so it doesn't throw a Vue Router 404
+  // and instead lets the local HTML file (public/admin/index.html) be served normally.
+  routeRules: {
+    '/admin/**': { appMiddleware: [] }
   }
 })
