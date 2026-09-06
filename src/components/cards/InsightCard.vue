@@ -1,6 +1,4 @@
 <script setup>
-import { RouterLink } from 'vue-router'
-
 defineProps({
   post: {
     type: Object,
@@ -10,7 +8,7 @@ defineProps({
 </script>
 
 <template>
-  <RouterLink :to="{ name: 'insightDetail', params: { slug: post.slug } }" class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
+  <NuxtLink :to="`/insights/${post.slug}`" class="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
     <!-- Image -->
     <div class="h-52 w-full relative overflow-hidden bg-gray-100">
       <img :src="post.image" :alt="post.title" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" />
@@ -27,5 +25,5 @@ defineProps({
          <span class="text-sm font-bold text-[#737474] flex items-center group-hover:translate-x-1 transition-transform">Baca Selengkapnya <span class="ml-2">→</span></span>
       </div>
     </div>
-  </RouterLink>
+  </NuxtLink>
 </template>

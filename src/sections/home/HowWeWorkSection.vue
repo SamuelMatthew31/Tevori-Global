@@ -28,7 +28,7 @@ const steps = [
 </script>
 
 <template>
-  <section class="py-16 md:py-24 px-4 bg-white border-t border-gray-100">
+  <section id="how-we-work" class="scroll-mt-20 py-16 md:py-24 px-4 bg-white border-t border-gray-100">
     <div class="container mx-auto max-w-6xl">
       <div class="text-center mb-12 md:mb-16">
         <h2 class="text-3xl md:text-4xl font-bold text-slate-800 mb-6">Bagaimana <span class="text-[#737474]">Cara Kerja Kami?</span></h2>

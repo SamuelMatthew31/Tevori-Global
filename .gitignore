@@ -37,3 +37,11 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# Nuxt & Output
+.nuxt
+.output
+
+# Environment variables
+.env
+.env.*.local

@@ -4,7 +4,7 @@ import TestimonialCard from '@/components/cards/TestimonialCard.vue'
 </script>
 
 <template>
-  <section class="py-16 md:py-24 px-4 bg-gray-50 border-t border-gray-100">
+  <section id="testimonials" class="scroll-mt-20 py-16 md:py-24 px-4 bg-gray-50 border-t border-gray-100">
     <div class="container mx-auto max-w-6xl">
       <!-- Section Header -->
       <div class="text-center mb-12 md:mb-16">

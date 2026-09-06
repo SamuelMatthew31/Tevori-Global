@@ -11,12 +11,18 @@ import { companyInfo } from '@/data/company'
         <p class="text-xs md:text-sm italic border-l-2 border-[#737474] pl-3 py-1">{{ companyInfo.tagline }}</p>
       </div>
       <div class="md:pl-8">
-        <h3 class="text-white text-base md:text-lg font-bold mb-6">Internal Links</h3>
+        <h3 class="text-white text-base md:text-lg font-bold mb-6">Navigasi Utama</h3>
         <ul class="space-y-3 text-xs md:text-sm">
-          <li><RouterLink to="/" class="hover:text-white transition flex items-center">- Beranda</RouterLink></li>
+          <li><NuxtLink to="/" class="hover:text-white transition flex items-center">- Beranda</NuxtLink></li>
           <li><a href="/#about" class="hover:text-white transition flex items-center">- Tentang Kami</a></li>
-          <li><RouterLink to="/products" class="hover:text-white transition flex items-center">- Produk / Katalog</RouterLink></li>
+          <li><NuxtLink to="/products" class="hover:text-white transition flex items-center">- Produk / Katalog</NuxtLink></li>
+          <li><NuxtLink to="/insights" class="hover:text-white transition flex items-center">- Berita & Artikel</NuxtLink></li>
           <li><a href="/#contact" class="hover:text-white transition flex items-center">- Hubungi Kami</a></li>
+          <li class="pt-2 border-t border-slate-800">
+            <NuxtLink to="/admin" class="text-slate-400 hover:text-white transition flex items-center font-medium">
+              <span class="mr-1.5">🔒</span> Admin CMS Panel
+            </NuxtLink>
+          </li>
         </ul>
       </div>
       <div>

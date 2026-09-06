@@ -1,0 +1,45 @@
+backend:
+  name: github
+  repo: SamuelMatthew31/Tevori-Global
+  branch: main
+  base_url: https://tevori-global.vercel.app # Can be updated to your custom production Vercel URL
+  auth_endpoint: api/auth
+
+# Allows direct editing on localhost without login via "npx decap-server"
+local_backend: true
+
+# Folder where Decap CMS saves uploaded media files
+media_folder: "public/images/uploads"
+# Public URL path the browser uses to resolve images
+public_folder: "/images/uploads"
+
+collections:
+  - name: "products"
+    label: "Catalog Products"
+    label_singular: "Product"
+    folder: "content/products"
+    create: true
+    extension: "json"
+    format: "json"
+    slug: "{{slug}}"
+    summary: "{{title}} ({{category}}) - MOQ: {{moq}}"
+    fields:
+      - { label: "Product Title", name: "title", widget: "string" }
+      - { label: "Slug", name: "slug", widget: "string", hint: "URL safe identifier, e.g. teak-dining-table-oval" }
+      - {
+          label: "Category",
+          name: "category",
+          widget: "select",
+          options: ["Furniture", "Art", "Decor"],
+          default: "Furniture"
+        }
+      - {
+          label: "Product Images",
+          name: "images",
+          widget: "list",
+          field: { label: "Image", name: "image", widget: "image" }
+        }
+      - { label: "Material Specification", name: "material", widget: "string", hint: "e.g. Solid Indonesian Teak Wood Grade A" }
+      - { label: "Estimated CBM (m³)", name: "cbmEstimation", widget: "number", value_type: "float", min: 0, step: 0.01, default: 0.25 }
+      - { label: "Minimum Order Quantity (MOQ)", name: "moq", widget: "number", value_type: "int", min: 1, default: 5 }
+      - { label: "Featured on Homepage?", name: "is_featured", widget: "boolean", default: false, required: false }

@@ -1,12 +1,19 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getInsightBySlug } from '@/data/insights'
+import { insightsList } from '@/data/insights'
 
 const route = useRoute()
 const router = useRouter()
 
-const post = computed(() => getInsightBySlug(route.params.slug))
+const post = ref(null)
+const loading = ref(true)
+
+onMounted(() => {
+  const found = insightsList.find(item => item.slug === route.params.slug)
+  post.value = found || null
+  loading.value = false
+})
 
 const goBack = () => {
   router.push('/insights')
@@ -18,13 +25,13 @@ const goBack = () => {
     <div class="container mx-auto max-w-3xl pt-4">
       
       <!-- Error State -->
-      <div v-if="!post" class="text-center py-20">
+      <div v-if="!post && !loading" class="text-center py-20">
         <h2 class="text-2xl font-bold text-slate-800 mb-4">Artikel Tidak Ditemukan</h2>
         <button @click="goBack" class="text-[#737474] underline">Kembali ke Daftar Artikel</button>
       </div>
 
       <!-- Post Content -->
-      <article v-else>
+      <article v-else-if="post">
         <!-- Nav & Meta -->
         <div class="mb-8">
           <button @click="goBack" class="text-slate-500 font-semibold text-sm hover:text-[#737474] transition mb-6 flex items-center">
@@ -62,7 +69,6 @@ const goBack = () => {
 </template>
 
 <style>
-/* Styling dasar untuk artikel v-html (jika belum menginstall plugin tailwind/typography) */
 .custom-prose p { margin-bottom: 1.5rem; color: #475569; line-height: 1.8; }
 .custom-prose h3 { font-size: 1.5rem; font-weight: 800; color: #1e293b; margin-top: 2.5rem; margin-bottom: 1rem; }
 </style>

@@ -3,7 +3,7 @@ import { companyInfo } from '@/data/company'
 </script>
 
 <template>
-  <section class="py-16 md:py-24 px-4 bg-gray-50">
+  <section id="contact" class="scroll-mt-20 py-16 md:py-24 px-4 bg-gray-50">
     <div class="container mx-auto max-w-5xl">
       <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100 flex flex-col md:flex-row mx-2 md:mx-0">
         

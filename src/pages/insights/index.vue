@@ -1,6 +1,9 @@
 <script setup>
+import { ref } from 'vue'
 import { insightsList } from '@/data/insights'
 import InsightCard from '@/components/cards/InsightCard.vue'
+
+const posts = ref(insightsList)
 </script>
 
 <template>
@@ -21,7 +24,7 @@ import InsightCard from '@/components/cards/InsightCard.vue'
 
       <!-- Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
-        <InsightCard v-for="post in insightsList" :key="post.id" :post="post" />
+        <InsightCard v-for="post in posts" :key="post.id" :post="post" />
       </div>
 
     </div>
