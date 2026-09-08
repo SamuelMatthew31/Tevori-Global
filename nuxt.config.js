@@ -20,6 +20,16 @@ export default defineNuxtConfig({
 
   modules: [],
 
+  runtimeConfig: {
+    // Private keys are only available on the server
+    sanityApiToken: process.env.SANITY_API_TOKEN,
+    public: {
+      // Public keys that are exposed to the client
+      sanityProjectId: process.env.SANITY_PROJECT_ID,
+      sanityDataset: process.env.SANITY_DATASET || 'production',
+    }
+  },
+
   app: {
     head: {
       title: 'PT Tevori Global Indonesia - B2B Export & Buyer Agent',

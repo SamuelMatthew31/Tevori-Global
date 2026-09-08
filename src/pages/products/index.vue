@@ -1,6 +1,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { companyInfo } from '@/data/company'
+import { useSanity } from '@/composables/useSanity'
+import { useAsyncData } from '#imports'
 
 useHead({
   title: 'Catalog Products - PT Tevori Global Indonesia',
@@ -9,35 +11,38 @@ useHead({
   ]
 })
 
-// 1. Native Vite Glob Import
-// Fix: We need to traverse exactly 3 levels up from src/pages/products/index.vue to hit the root content folder
-// src/pages/products/ -> ../../.. -> root -> /content/products
-const productModules = import.meta.glob('../../../content/products/*.json', { eager: true })
+const { fetch } = useSanity()
+
+// Replace import.meta.glob with a Sanity GROQ query
+// We fetch products from the Sanity Content Lake
+const query = `*[_type == "product"] {
+  "id": _id,
+  title,
+  "slug": slug.current,
+  category,
+  "primaryImage": images[0].asset->url,
+  material,
+  cbmEstimation,
+  moq,
+  is_featured
+}`
+
+// useAsyncData ensures this is fetched during SSR for Vercel, and cached on the client
+const { data: sanityProducts } = await useAsyncData('products', () => fetch(query))
 
 const products = computed(() => {
-  return Object.keys(productModules).map((filePath) => {
-    const fileContent = productModules[filePath]
-    const data = fileContent.default || fileContent
-    
-    // Fallback if image array is empty from CMS
-    const primaryImage = (data.images && data.images.length > 0)
-      ? data.images[0]
-      : 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=800&q=80'
-
-    return {
-      ...data,
-      // Fallback ID to the filename itself if CMS somehow misses the slug
-      id: data.slug || filePath.split('/').pop().replace('.json', ''),
-      primaryImage,
-      // Provide clean fallbacks so the UI NEVER crashes on an empty CMS property
-      title: data.title || 'Untitled Product',
-      category: data.category || 'Furniture',
-      material: data.material || 'Standard Quality',
-      cbmEstimation: data.cbmEstimation || 0,
-      moq: data.moq || 1,
-      is_featured: data.is_featured || false
-    }
-  })
+  if (!sanityProducts.value) return []
+  
+  return sanityProducts.value.map(data => ({
+    ...data,
+    primaryImage: data.primaryImage || 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?auto=format&fit=crop&w=800&q=80',
+    title: data.title || 'Untitled Product',
+    category: data.category || 'Furniture',
+    material: data.material || 'Standard Quality',
+    cbmEstimation: data.cbmEstimation || 0,
+    moq: data.moq || 1,
+    is_featured: data.is_featured || false
+  }))
 })
 
 // Search & Filter State
@@ -81,7 +86,7 @@ const createQuoteLink = (product) => {
     <!-- Header -->
     <div class="text-center max-w-3xl mx-auto mb-10">
       <div class="inline-block px-4 py-1 rounded-full bg-slate-200 text-[#737474] font-semibold text-xs tracking-wider uppercase mb-3">
-        Katalog Produk
+        Katalog Produk (Powered by Sanity)
       </div>
       <h1 class="text-3xl md:text-5xl font-black text-slate-800 tracking-tight mb-4">
         Produk Ekspor Berkualitas
@@ -189,7 +194,7 @@ const createQuoteLink = (product) => {
     <div v-else class="text-center py-24 bg-white rounded-3xl border border-dashed border-gray-300">
       <div class="text-5xl mb-4">📦</div>
       <h3 class="text-xl font-bold text-slate-800 mb-2">Katalog Kosong</h3>
-      <p class="text-slate-500 text-sm max-w-md mx-auto">Anda belum mengunggah produk dari CMS Panel. Silahkan login ke panel Admin untuk menambah produk secara dinamis.</p>
+      <p class="text-slate-500 text-sm max-w-md mx-auto">Anda belum mengunggah produk dari Sanity Studio. Silahkan login ke panel Sanity untuk menambah produk secara dinamis.</p>
     </div>
   </div>
 </template>
