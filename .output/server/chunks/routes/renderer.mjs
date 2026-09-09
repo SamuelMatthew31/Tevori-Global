@@ -1,11 +1,11 @@
 import { u as useRuntimeConfig, e as encodePath, j as joinRelativeURL, c as defineRenderHandler, g as getQuery, f as createError, d as destr, h as getRouteRules, r as relative, i as joinURL, k as getResponseStatusText, l as getResponseStatus, b as useNitroApp } from '../_/nitro.mjs';
-import { createHead as createHead$1, propsToString, renderSSRHead } from 'unhead/server';
-import { hasInjectionContext, inject, isRef, toValue } from 'vue';
+import { c as createHead } from '../_/server.mjs';
 import { DeprecationsPlugin } from 'unhead/legacy';
 import { PromisesPlugin, TemplateParamsPlugin, AliasSortingPlugin } from 'unhead/plugins';
 import { defineDiagnostics, createConsoleReporter } from 'nostics';
 import { createRenderer, getRequestDependencies, getPreloadLinks, getPrefetchLinks } from 'vue-bundle-renderer/runtime';
 import { renderToString } from 'vue/server-renderer';
+import { propsToString, renderSSRHead } from 'unhead/server';
 import { stringify, uneval } from 'devalue';
 
 /**
@@ -47,45 +47,6 @@ const serverDiagnostics = /* #__PURE__ */ defineDiagnostics({
 
 const NUXT_RUNTIME_PAYLOAD_EXTRACTION = false;
 const NUXT_SSR_STREAMING = false;
-
-const headSymbol = "usehead";
-// @__NO_SIDE_EFFECTS__
-function injectHead() {
-  if (hasInjectionContext()) {
-    const instance = inject(headSymbol);
-    if (instance)
-      return instance;
-  }
-  throw new Error("useHead() was called without provide context, ensure you call it through the setup() function.");
-}
-// @__NO_SIDE_EFFECTS__
-function vueInstall(head) {
-  const plugin = {
-    install(app) {
-      app.config.globalProperties.$unhead = head;
-      app.config.globalProperties.$head = head;
-      app.provide(headSymbol, head);
-    }
-  };
-  return plugin.install;
-}
-
-const VueResolver = /* @__PURE__ */ Object.assign(
-  (_, value) => isRef(value) ? toValue(value) : value,
-  // identity for plain non-reactive values, so the SSR default init entry
-  // keeps its precomputed fast path (see unhead/server createHead)
-  { _static: true }
-);
-
-// @__NO_SIDE_EFFECTS__
-function createHead(options = {}) {
-  const head = createHead$1({
-    ...options,
-    propResolvers: [VueResolver]
-  });
-  head.install = vueInstall(head);
-  return head;
-}
 
 const legacyPlugins = [DeprecationsPlugin, PromisesPlugin, TemplateParamsPlugin, AliasSortingPlugin];
 
@@ -149,7 +110,7 @@ function lazyCachedFunction(fn) {
 	};
 }
 
-const appHead = {"meta":[{"charset":"utf-8"},{"name":"viewport","content":"width=device-width, initial-scale=1"},{"name":"description","content":"Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities, Authentic Balinese Handcrafted Arts."}],"link":[{"rel":"icon","type":"image/x-icon","href":"/favicon.ico"}],"style":[],"script":[],"noscript":[],"title":"PT Tevori Global Indonesia - B2B Export & Buyer Agent"};
+const appHead = {"link":[{"rel":"icon","type":"image/x-icon","href":"/favicon.ico"}],"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"},{"name":"description","content":"Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities, Authentic Balinese Handcrafted Arts."},{"property":"og:type","content":"website"}],"style":[],"script":[],"noscript":[],"title":"PT Tevori Global Indonesia - B2B Export & Buyer Agent","htmlAttrs":{}};
 
 const appRootTag = "div";
 
@@ -170,7 +131,7 @@ globalThis.__buildAssetsURL = buildAssetsURL;
 globalThis.__publicAssetsURL = publicAssetsURL;
 const APP_ROOT_OPEN_TAG = `<${appRootTag}${propsToString(appRootAttrs)}>`;
 const APP_ROOT_CLOSE_TAG = `</${appRootTag}>`;
-const getServerEntry = () => import('../virtual/entry.mjs').then(function (n) { return n.e; }).then((r) => r.default || r);
+const getServerEntry = () => import('../virtual/entry.mjs').then(function (n) { return n.f; }).then((r) => r.default || r);
 const getPrecomputedDependencies = () => import('../virtual/precomputed.mjs').then((r) => "default" in r ? r.default : r).then((r) => typeof r === "function" ? r() : r);
 const getSSRRenderer = lazyCachedFunction(async () => {
 	const createSSRApp = await getServerEntry();
@@ -259,7 +220,7 @@ const renderSSRHeadOptions = {"omitLineBreaks":true};
 
 const entryIds = ["../node_modules/nuxt/dist/app/entry.js"];
 
-const entryFileName = "x9qapDl1.js";
+const entryFileName = "CHvIgbfu.js";
 
 //#region src/runtime/handlers/renderer.ts
 globalThis.__buildAssetsURL = buildAssetsURL;
@@ -418,5 +379,5 @@ const renderer = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
 	default: handler
 }, Symbol.toStringTag, { value: 'Module' }));
 
-export { VueResolver as V, baseURL as b, headSymbol as h, injectHead as i, renderer as r };
+export { baseURL as b, renderer as r };
 //# sourceMappingURL=renderer.mjs.map

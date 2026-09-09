@@ -1,12 +1,17 @@
 import process from 'node:process';globalThis._importMeta_={url:import.meta.url,env:process.env};import { Server as Server$1 } from 'node:http';
 import { Server } from 'node:https';
 import { t as toNodeListener, d as destr, u as useRuntimeConfig, a as trapUnhandledNodeErrors, s as setupGracefulShutdown, b as useNitroApp } from './chunks/_/nitro.mjs';
+import 'lru-cache';
+import 'fnv1a-64';
+import 'object-identity';
 import 'node:events';
 import 'node:buffer';
 import 'node:fs';
 import 'node:path';
 import 'node:crypto';
+import 'consola';
 import 'node:url';
+import 'sitemapd/parse';
 
 const cert = process.env.NITRO_SSL_CERT;
 const key = process.env.NITRO_SSL_KEY;

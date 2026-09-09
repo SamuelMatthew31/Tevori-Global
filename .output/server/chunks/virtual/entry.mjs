@@ -1,11 +1,15 @@
 import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { defineProdDiagnostics } from 'nostics';
 import { ansiFormatter } from 'nostics/formatters/ansi';
-import { getCurrentScope, ref, watchEffect, getCurrentInstance, onBeforeUnmount, onDeactivated, onActivated, createApp, provide, onErrorCaptured, onServerPrefetch, unref, createVNode, resolveDynamicComponent, shallowReactive, reactive, effectScope, hasInjectionContext, inject, mergeProps, toRef, withCtx, createTextVNode, defineComponent, h, shallowRef, resolveComponent, isVNode, createCommentVNode, computed, isReadonly, Suspense, Fragment, useSSRContext, isRef, isShallow, isReactive, toRaw } from 'vue';
-import { f as createError, m as hasProtocol, i as joinURL, p as parseQuery, n as parseURL, e as encodePath, o as decodePath, q as isScriptProtocol, w as withQuery, v as withTrailingSlash, x as withoutTrailingSlash, y as sanitizeStatusCode, $ as $fetch, z as defu } from '../_/nitro.mjs';
-import { i as injectHead$1, V as VueResolver, b as baseURL, h as headSymbol } from '../routes/renderer.mjs';
-import { useRoute, useRouter, RouterView, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
+import { getCurrentScope, ref, watchEffect, getCurrentInstance, onBeforeUnmount, onDeactivated, onActivated, createApp, provide, onErrorCaptured, onServerPrefetch, unref, createVNode, resolveDynamicComponent, shallowReactive, reactive, effectScope, hasInjectionContext, inject, mergeProps, computed, toRef, defineComponent, h, withCtx, createTextVNode, isVNode, createCommentVNode, shallowRef, resolveComponent, createElementBlock, cloneVNode, isReadonly, Suspense, Fragment, useSSRContext, isRef, isShallow, isReactive, toRaw, toValue, nextTick, queuePostFlushCb } from 'vue';
+import { f as createError, Z as hasProtocol, i as joinURL, _ as parseQuery, I as parseURL, e as encodePath, a0 as decodePath, a1 as isScriptProtocol, K as withQuery, w as withTrailingSlash, a2 as withoutTrailingSlash, a3 as sanitizeStatusCode, $ as $fetch, X as defu, a4 as titleCase, a5 as createNitroRouteRuleMatcher, a6 as stringifyQuery, L as withLeadingSlash, S as withBase, a7 as digest } from '../_/nitro.mjs';
+import { b as baseURL } from '../routes/renderer.mjs';
+import { isPlainObject } from '@vue/shared';
+import { useRoute, RouterView, useRouter, createMemoryHistory, createRouter, START_LOCATION } from 'vue-router';
+import * as import_unhead_plugins from 'unhead/plugins';
+import { FlatMetaPlugin, defineHeadPlugin, TemplateParamsPlugin } from 'unhead/plugins';
+import { walkResolver, hasOwn, processTemplateParams } from 'unhead/utils';
 import { ssrRenderSuspense, ssrRenderComponent, ssrRenderVNode, ssrRenderAttrs, ssrInterpolate, ssrRenderAttr } from 'vue/server-renderer';
-import { walkResolver } from 'unhead/utils';
+import { i as injectHead$1, V as VueResolver, h as headSymbol } from '../_/server.mjs';
 
 function useHead(input, options = {}) {
   const head = options.head || injectHead$1();
@@ -43,6 +47,32 @@ function clientUseHead(head, input, options = {}) {
     onActivated(() => {
       deactivated.value = false;
     });
+  }
+  return entry;
+}
+function normalizeSeoMetaInput(input) {
+  if (input._flatMeta)
+    return input;
+  const meta = {};
+  for (const key in input) {
+    if (!hasOwn(input, key) || key === "title" || key === "titleTemplate")
+      continue;
+    meta[key] = input[key];
+  }
+  return {
+    title: input.title,
+    titleTemplate: input.titleTemplate,
+    _flatMeta: meta
+  };
+}
+function useSeoMeta(input = {}, options = {}) {
+  const head = options.head || injectHead$1();
+  head.use(FlatMetaPlugin);
+  const entry = useHead(normalizeSeoMetaInput(input), options);
+  const corePatch = entry.patch;
+  if (!entry.__patched) {
+    entry.patch = (input2) => corePatch(normalizeSeoMetaInput(input2));
+    entry.__patched = true;
   }
   return entry;
 }
@@ -330,6 +360,173 @@ function executeAsync(function_) {
 	return [awaitable, restore];
 }
 
+//#region src/index.ts
+/**
+* Compute the 64-bit FNV-1a hash of a string as two 32-bit lanes.
+*
+* This is the fast core: no BigInt, no allocations, plain `Math.imul`-free
+* 32-bit arithmetic. Prefer {@link fnv1a64Hex} or {@link fnv1a64Base36} for a
+* usable key; use this directly only when you want to avoid string formatting.
+*
+* The hash is computed over UTF-16 code units (`str.charCodeAt(i)`), not UTF-8
+* bytes. For ASCII input this matches a canonical FNV-1a-64; for non-ASCII it
+* does not. See the README for details.
+*
+* @param str - The string to hash.
+* @returns The `{ high, low }` 32-bit lanes of the 64-bit hash.
+*/
+function fnv1a64(str) {
+	const len = str.length;
+	let i = 0;
+	let t0 = 0;
+	let v0 = 8997;
+	let t1 = 0;
+	let v1 = 33826;
+	let t2 = 0;
+	let v2 = 40164;
+	let t3 = 0;
+	let v3 = 52210;
+	while (i < len) {
+		v0 ^= str.charCodeAt(i++);
+		t0 = v0 * 435;
+		t1 = v1 * 435;
+		t2 = v2 * 435;
+		t3 = v3 * 435;
+		t2 += v0 << 8;
+		t3 += v1 << 8;
+		t1 += t0 >>> 16;
+		v0 = t0 & 65535;
+		t2 += t1 >>> 16;
+		v1 = t1 & 65535;
+		v3 = t3 + (t2 >>> 16) & 65535;
+		v2 = t2 & 65535;
+	}
+	return {
+		high: (v3 << 16 | v2) >>> 0,
+		low: (v1 << 16 | v0) >>> 0
+	};
+}
+/**
+* Compute the 64-bit FNV-1a hash of a string as a `bigint`.
+*
+* Ergonomic and comparable, at the cost of composing the two lanes into a
+* `bigint`. For a compact string key, prefer {@link fnv1a64Base36}.
+*
+* @param str - The string to hash.
+* @returns The 64-bit hash as an unsigned `bigint`.
+*/
+function fnv1a64BigInt(str) {
+	const { high, low } = fnv1a64(str);
+	return BigInt(high) << 32n | BigInt(low);
+}
+const hexDigits = "0123456789abcdef";
+/**
+* Every byte value rendered as its two hex digits, so a 32-bit lane formats in
+* 4 lookups instead of `toString(16)` plus a `padStart`. Leading zeros are
+* intrinsic to the table, which is what makes the padding free.
+*/
+Array.from({ length: 256 }, (_, i) => hexDigits.charAt(i >> 4) + hexDigits.charAt(i & 15));
+/**
+* Compute the 64-bit FNV-1a hash of a string as a base36 string.
+*
+* This is the shortest textual form (up to 13 characters) and is ideal for
+* cache keys. The length varies with the value; it is not zero-padded. Equal
+* inputs always produce identical strings.
+*
+* @param str - The string to hash.
+* @returns A base36 string of the 64-bit hash.
+*/
+function fnv1a64Base36(str) {
+	return fnv1a64BigInt(str).toString(36);
+}
+
+function walk(input, seen) {
+	if (input === null) return "L";
+	let out, i = 0, keys = input, tmp = typeof input;
+	if (tmp !== "object") {
+		if (tmp === "number") return input - input === 0 ? "n" + input : "L";
+		if (tmp === "string") return "s" + input;
+		if (tmp === "bigint") return "n" + input;
+		if (tmp === "boolean") return input ? "T" : "F";
+		return;
+	}
+	let is_arr = Array.isArray(input);
+	if (!is_arr) {
+		if (input instanceof Date) return "d" + +input;
+		if (input instanceof RegExp) return "r" + input.source + input.flags;
+	}
+	tmp = seen.indexOf(input);
+	if (~tmp) return "~" + (tmp + 1);
+	if (typeof input.toJSON === "function" && !ArrayBuffer.isView(input)) {
+		input = input.toJSON();
+		if (input === null || typeof input !== "object") return walk(input, seen);
+		tmp = seen.indexOf(input);
+		if (~tmp) return "~" + (tmp + 1);
+		is_arr = Array.isArray(input);
+	}
+	seen.push(keys);
+	if (is_arr) {
+		for (out = "a"; i < input.length; out += (tmp = walk(input[i++], seen)) === undefined ? "L" : tmp);
+	} else if (input instanceof Set) {
+		out = "e";
+		for (let value of input) out += (tmp = walk(value, seen)) === undefined ? "L" : tmp;
+	} else if (input instanceof Map) {
+		keys = [...input.keys()];
+		if (keys.length > 1) keys.sort();
+		for (out = "o"; i < keys.length; i++) {
+			if ((tmp = walk(input.get(keys[i]), seen)) !== undefined) out += keys[i] + tmp;
+		}
+	} else if (input[Symbol.toStringTag] === undefined || ArrayBuffer.isView(input)) {
+		keys = Object.keys(input);
+		if (keys.length > 1) keys.sort();
+		for (out = "o"; i < keys.length; i++) {
+			if ((tmp = walk(input[keys[i]], seen)) !== undefined) out += keys[i] + tmp;
+		}
+	} else {
+		throw new Error("Unsupported value");
+	}
+	seen.pop();
+	return out;
+}
+/**
+* Canonicalize a value into a stable identity string. Two structurally-equal
+* inputs return the same id, regardless of key order.
+*
+* @example
+* ```ts
+* identify({ a: 1, b: 2 }) === identify({ b: 2, a: 1 }); // true
+* ```
+*/
+function identify(input) {
+	return walk(input, []) ?? "U";
+}
+
+//#region \0rolldown/runtime.js
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __exportAll = (all, no_symbols) => {
+	let target = {};
+	for (var name in all) __defProp(target, name, {
+		get: all[name],
+		enumerable: true
+	});
+	__defProp(target, Symbol.toStringTag, { value: "Module" });
+	return target;
+};
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget);
+//#endregion
 //#region node_modules/nuxt/dist/app/diagnostics/_shared.js
 /**
 * Shared configuration for the runtime (E<N>xxx) diagnostics catalogs.
@@ -374,6 +571,8 @@ var appDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fnuxt.config.mjs
 var nuxtLinkDefaults = {
 	"componentName": "NuxtLink"};
+var asyncDataDefaults = { "deep": false };
+var fetchDefaults = {};
 //#endregion
 //#region node_modules/nuxt/dist/app/nuxt.js
 function getNuxtAppCtx(id = "nuxt-app") {
@@ -468,13 +667,42 @@ async function applyPlugin(nuxtApp, plugin) {
 }
 /** @since 3.0.0 */
 async function applyPlugins(nuxtApp, plugins) {
+	return applyPluginsWithDependencies(nuxtApp, plugins);
+}
+async function applyPluginsWithDependencies(nuxtApp, plugins) {
+	const resolvedPlugins = /* @__PURE__ */ new Set();
+	const unresolvedPlugins = [];
+	const parallels = [];
 	let error;
-	for (const plugin of plugins) try {
-		await applyPlugin(nuxtApp, plugin);
-	} catch (e) {
-		if (!nuxtApp.payload.error) throw e;
-		error ||= e;
+	let promiseDepth = 0;
+	async function executePlugin(plugin) {
+		const unresolvedPluginsForThisPlugin = plugin.dependsOn?.filter((name) => plugins.some((p) => p._name === name) && !resolvedPlugins.has(name)) ?? [];
+		if (unresolvedPluginsForThisPlugin.length > 0) unresolvedPlugins.push([new Set(unresolvedPluginsForThisPlugin), plugin]);
+		else {
+			const promise = applyPlugin(nuxtApp, plugin).then(async () => {
+				if (plugin._name) {
+					resolvedPlugins.add(plugin._name);
+					await Promise.all(unresolvedPlugins.map(async ([dependsOn, unexecutedPlugin]) => {
+						if (dependsOn.has(plugin._name)) {
+							dependsOn.delete(plugin._name);
+							if (dependsOn.size === 0) {
+								promiseDepth++;
+								await executePlugin(unexecutedPlugin);
+							}
+						}
+					}));
+				}
+			}).catch((e) => {
+				if (!plugin.parallel && !nuxtApp.payload.error) throw e;
+				error ||= e;
+			});
+			if (plugin.parallel) parallels.push(promise);
+			else await promise;
+		}
 	}
+	for (const plugin of plugins) await executePlugin(plugin);
+	await Promise.all(parallels);
+	if (promiseDepth) for (let i = 0; i < promiseDepth; i++) await Promise.all(parallels);
 	if (error) throw nuxtApp.payload.error || error;
 }
 /** @since 3.0.0 */
@@ -721,64 +949,135 @@ var createError$1 = (error) => {
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Ffetch.mjs
 if (!globalThis.$fetch) globalThis.$fetch = $fetch.create({ baseURL: baseURL() });
+var $fetch$2 = globalThis.$fetch;
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fglobal-polyfills.mjs
 if (!("global" in globalThis)) globalThis.global = globalThis;
 //#endregion
-//#region node_modules/nuxt/dist/head/runtime/island-head.js
+//#region node_modules/nuxt/dist/app/utils/hash.js
 /**
-* No-op `head.push` until the returned `unfreeze` runs. Plugin/transformer
-* augmentations on the same head are unaffected.
+* Hash an arbitrary value into a short, stable string key.
+*
+* Values are serialized to a canonical, locale-independent representation
+* (equal structures hash equally regardless of key order or runtime locale),
+* then digested with a fast non-cryptographic hash. This is what `useFetch` and
+* `useAsyncData` use internally to derive their cache keys, so it is safe to use
+* for the same purpose in your own code.
+*
+* The digest is non-cryptographic and must not be used for integrity checks.
+*
+* @since 4.5.0
 */
-function freezeHead(head) {
-	const realPush = head.push;
-	head.push = () => ({
-		dispose: () => {},
-		patch: () => {},
-		_i: 0
-	});
-	return () => {
-		head.push = realPush;
-	};
+function hashKey(value) {
+	return fnv1a64Base36(identify(value));
 }
 //#endregion
-//#region node_modules/nuxt/dist/head/runtime/plugins/unhead.server.js
-var plugin$2 = /* @__PURE__ */ defineNuxtPlugin({
-	name: "nuxt:head",
-	enforce: "pre",
-	setup(nuxtApp) {
-		const head = nuxtApp.ssrContext.head;
-		if (nuxtApp.ssrContext.islandContext) {
-			const unfreeze = freezeHead(head);
-			nuxtApp.hooks.hookOnce("app:created", unfreeze);
+//#region node_modules/nuxt/dist/app/diagnostics/head.js
+/**
+* E6xxx
+* Head / unhead runtime diagnostics.
+*/
+var unheadDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
+	docsBase,
+	reporters: prodReporters
+});
+//#endregion
+//#region node_modules/nuxt/dist/head/runtime/composables.js
+/**
+* Injects the head client from the Nuxt context or Vue inject.
+*/
+function injectHead(nuxtApp) {
+	const nuxt = nuxtApp || useNuxtApp();
+	return nuxt.ssrContext?.head || nuxt.runWithContext(() => {
+		if (hasInjectionContext()) {
+			const head = inject(headSymbol);
+			if (!head) throw unheadDiagnostics.NUXT_E6001();
+			return head;
 		}
-		nuxtApp.vueApp.use(head);
+	});
+}
+function useHead$1(input, options = {}) {
+	const head = options.head || injectHead(options.nuxt);
+	return useHead(input, {
+		head,
+		...options
+	});
+}
+function useSeoMeta$1(input, options = {}) {
+	const head = options.head || injectHead(options.nuxt);
+	return useSeoMeta(input, {
+		head,
+		...options
+	});
+}
+//#endregion
+//#region node_modules/nuxt/dist/app/utils/debounce-tick.js
+/**
+* Debounce an async function so that repeated calls within the same tick are
+* collapsed into a single call (plus a trailing call if arguments arrived
+* while the debounced call was still pending).
+*
+* Adapted from https://github.com/unjs/perfect-debounce with the timeout
+* replaced by Vue's post-flush callback queue.
+*/
+function debounceTick(fn, options = {}) {
+	let leadingValue;
+	let active = false;
+	let resolveList = [];
+	let currentPromise;
+	let trailingArgs;
+	const applyFn = (_this, args) => {
+		const promise = _applyPromised(fn, _this, args);
+		currentPromise = promise;
+		promise.finally(() => {
+			currentPromise = void 0;
+			if (trailingArgs && !active) {
+				const args = trailingArgs;
+				trailingArgs = void 0;
+				applyFn(_this, args);
+			}
+		});
+		return promise;
+	};
+	return function(...args) {
+		trailingArgs = args;
+		if (currentPromise) return currentPromise;
+		return new Promise((resolve) => {
+			const shouldCallNow = options.leading && !active;
+			if (!active) {
+				active = true;
+				queuePostFlushCb(() => {
+					active = false;
+					const flushArgs = trailingArgs ?? args;
+					trailingArgs = void 0;
+					const promise = options.leading ? leadingValue : applyFn(this, flushArgs);
+					for (const _resolve of resolveList) _resolve(promise);
+					resolveList = [];
+				});
+			}
+			if (shouldCallNow) {
+				leadingValue = applyFn(this, args);
+				resolve(leadingValue);
+			} else resolveList.push(resolve);
+		});
+	};
+}
+async function _applyPromised(fn, _this, args) {
+	return await fn.apply(_this, args);
+}
+defineComponent({
+	name: "ServerPlaceholder",
+	render() {
+		return createElementBlock("div");
 	}
 });
 //#endregion
-//#region node_modules/nuxt/dist/pages/runtime/utils.js
+//#region node_modules/nuxt/dist/app/components/utils.js
 var ROUTE_KEY_PARENTHESES_RE$1 = /(:\w+)\([^)]+\)/g;
 var ROUTE_KEY_SYMBOLS_RE$1 = /(:\w+)[?+*]/g;
 var ROUTE_KEY_NORMAL_RE$1 = /:\w+/g;
-var interpolatePath = (route, match) => {
-	return match.path.replace(ROUTE_KEY_PARENTHESES_RE$1, "$1").replace(ROUTE_KEY_SYMBOLS_RE$1, "$1").replace(ROUTE_KEY_NORMAL_RE$1, (r) => route.params[r.slice(1)]?.toString() || "");
-};
-var generateRouteKey$1 = (routeProps, override) => {
-	const matchedRoute = routeProps.route.matched.find((m) => m.components?.default === routeProps.Component.type);
-	const source = matchedRoute?.meta.key ?? (matchedRoute && interpolatePath(routeProps.route, matchedRoute));
-	return typeof source === "function" ? source(routeProps.route) : source;
-};
-/** @since 3.9.0 */
-function toArray(value) {
-	return Array.isArray(value) ? value : [value];
-}
-//#endregion
-//#region node_modules/nuxt/dist/app/components/utils.js
-var ROUTE_KEY_PARENTHESES_RE = /(:\w+)\([^)]+\)/g;
-var ROUTE_KEY_SYMBOLS_RE = /(:\w+)[?+*]/g;
-var ROUTE_KEY_NORMAL_RE = /:\w+/g;
-function generateRouteKey(route) {
-	const source = route?.meta.key ?? route.path.replace(ROUTE_KEY_PARENTHESES_RE, "$1").replace(ROUTE_KEY_SYMBOLS_RE, "$1").replace(ROUTE_KEY_NORMAL_RE, (r) => route.params[r.slice(1)]?.toString() || "");
+function generateRouteKey$1(route) {
+	const source = route?.meta.key ?? route.path.replace(ROUTE_KEY_PARENTHESES_RE$1, "$1").replace(ROUTE_KEY_SYMBOLS_RE$1, "$1").replace(ROUTE_KEY_NORMAL_RE$1, (r) => route.params[r.slice(1)]?.toString() || "");
 	return typeof source === "function" ? source(route) : source;
 }
 /**
@@ -787,10 +1086,504 @@ function generateRouteKey(route) {
 */
 function isChangingPage(to, from) {
 	if (to === from || from === START_LOCATION) return false;
-	if (generateRouteKey(to) !== generateRouteKey(from)) return true;
+	if (generateRouteKey$1(to) !== generateRouteKey$1(from)) return true;
 	if (to.matched.every((comp, index) => comp.components && comp.components.default === from.matched[index]?.components?.default)) return false;
 	return true;
 }
+var VALID_TAG_RE = /^[a-z][a-z0-9-]*$/i;
+/** Return `tag` if it is a safe HTML tag name, otherwise `fallback`. */
+function sanitizeTag(tag, fallback) {
+	return tag && VALID_TAG_RE.test(tag) ? tag : fallback;
+}
+//#endregion
+//#region node_modules/nuxt/dist/app/components/client-only.js
+var clientOnlySymbol = Symbol.for("nuxt:client-only");
+defineComponent({
+	name: "ClientOnly",
+	inheritAttrs: false,
+	props: [
+		"fallback",
+		"placeholder",
+		"placeholderTag",
+		"fallbackTag"
+	],
+	setup(props, { slots, attrs }) {
+		const mounted = shallowRef(false);
+		const vm = getCurrentInstance();
+		if (vm) vm._nuxtClientOnly = true;
+		provide(clientOnlySymbol, true);
+		return () => {
+			if (mounted.value) {
+				const vnodes = slots.default?.();
+				if (vnodes && vnodes.length === 1) return [cloneVNode(vnodes[0], attrs)];
+				return vnodes;
+			}
+			const slot = slots.fallback || slots.placeholder;
+			if (slot) return h(slot);
+			const fallbackStr = props.fallback || props.placeholder || "";
+			const fallbackTag = sanitizeTag(props.fallbackTag || props.placeholderTag, "span");
+			return createElementBlock(fallbackTag, attrs, fallbackStr);
+		};
+	}
+});
+//#endregion
+//#region node_modules/nuxt/dist/compiler/runtime/index.js
+/**
+* Define a factory for a function that should be registered for automatic key injection.
+* @since 4.2.0
+* @param factory
+*/
+function defineKeyedFunctionFactory(factory) {
+	const placeholder = function() {
+		throw appDiagnostics.NUXT_E1007({ name: factory.name });
+	};
+	return Object.defineProperty(placeholder, "__nuxt_factory", {
+		enumerable: false,
+		get: () => factory.factory
+	});
+}
+//#endregion
+//#region node_modules/nuxt/dist/app/diagnostics/data.js
+/**
+* E3xxx
+* Data fetching (useFetch / useAsyncData) runtime diagnostics.
+*/
+var dataDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
+	docsBase,
+	reporters: prodReporters
+});
+//#endregion
+//#region node_modules/nuxt/dist/app/composables/asyncData.js
+var createUseAsyncData = defineKeyedFunctionFactory({
+	name: "createUseAsyncData",
+	factory(options = {}) {
+		function useAsyncData(...args) {
+			const autoKey = typeof args[args.length - 1] === "string" ? args.pop() : void 0;
+			if (_isAutoKeyNeeded(args[0], args[1])) args.unshift(autoKey);
+			let [_key, _handler, opts = {}] = args;
+			const key = isRef(_key) || typeof _key === "function" ? computed(() => toValue(_key)) : { value: _key };
+			if (!key.value || typeof key.value !== "string") throw dataDiagnostics.NUXT_E3008();
+			if (typeof _handler !== "function") throw dataDiagnostics.NUXT_E3009();
+			const shouldFactoryOptionsOverride = typeof options === "function";
+			const nuxtApp = useNuxtApp();
+			const factoryOptions = shouldFactoryOptionsOverride ? options(opts) : options;
+			if (!shouldFactoryOptionsOverride) for (const key in factoryOptions) {
+				if (factoryOptions[key] === void 0) continue;
+				if (opts[key] !== void 0) continue;
+				opts[key] = factoryOptions[key];
+			}
+			opts.server ??= true;
+			opts.default ??= getDefault;
+			opts.getCachedData ??= getDefaultCachedData;
+			opts.lazy ??= false;
+			opts.immediate ??= true;
+			opts.deep ??= asyncDataDefaults.deep;
+			opts.dedupe ??= "cancel";
+			opts.enabled ??= true;
+			if (shouldFactoryOptionsOverride) for (const key in factoryOptions) {
+				if (factoryOptions[key] === void 0) continue;
+				opts[key] = factoryOptions[key];
+			}
+			nuxtApp._asyncData[key.value];
+			function createInitialFetch() {
+				const initialFetchOptions = {
+					cause: "initial",
+					dedupe: opts.dedupe
+				};
+				const existing = nuxtApp._asyncData[key.value];
+				if (!existing?._init) {
+					initialFetchOptions.cachedData = opts.getCachedData(key.value, nuxtApp, { cause: "initial" });
+					nuxtApp._asyncData[key.value] = buildAsyncData(nuxtApp, key.value, _handler, opts, initialFetchOptions.cachedData);
+					nuxtApp._asyncData[key.value]._initialCachedData = initialFetchOptions.cachedData;
+				} else if (nuxtApp._asyncDataPromises[key.value]) initialFetchOptions.cachedData = existing._initialCachedData;
+				return () => nuxtApp._asyncData[key.value].execute(initialFetchOptions);
+			}
+			const initialFetch = createInitialFetch();
+			const asyncData = nuxtApp._asyncData[key.value];
+			asyncData._deps++;
+			if (opts.server !== false && nuxtApp.payload.serverRendered && opts.immediate) {
+				const promise = initialFetch();
+				if (getCurrentInstance()) onServerPrefetch(() => promise);
+				else nuxtApp.hook("app:created", async () => {
+					await promise;
+				});
+			}
+			const asyncReturn = {
+				data: writableComputedRef(() => nuxtApp._asyncData[key.value]?.data),
+				pending: writableComputedRef(() => nuxtApp._asyncData[key.value]?.pending),
+				status: writableComputedRef(() => nuxtApp._asyncData[key.value]?.status),
+				error: writableComputedRef(() => nuxtApp._asyncData[key.value]?.error),
+				refresh: (...args) => {
+					if (!nuxtApp._asyncData[key.value]?._init) return createInitialFetch()();
+					return nuxtApp._asyncData[key.value].execute(...args);
+				},
+				execute: (...args) => asyncReturn.refresh(...args),
+				clear: () => {
+					const entry = nuxtApp._asyncData[key.value];
+					if (entry?._abortController) try {
+						entry._abortController.abort(new DOMException("AsyncData aborted by user.", "AbortError"));
+					} finally {
+						entry._abortController = void 0;
+					}
+					clearNuxtDataByKey(nuxtApp, key.value);
+				}
+			};
+			const asyncDataPromise = Promise.resolve(nuxtApp._asyncDataPromises[key.value]).then(() => asyncReturn);
+			Object.assign(asyncDataPromise, asyncReturn);
+			Object.defineProperties(asyncDataPromise, {
+				then: {
+					enumerable: true,
+					value: asyncDataPromise.then.bind(asyncDataPromise)
+				},
+				catch: {
+					enumerable: true,
+					value: asyncDataPromise.catch.bind(asyncDataPromise)
+				},
+				finally: {
+					enumerable: true,
+					value: asyncDataPromise.finally.bind(asyncDataPromise)
+				}
+			});
+			return asyncDataPromise;
+		}
+		return useAsyncData;
+	}
+});
+var useAsyncData = createUseAsyncData.__nuxt_factory();
+createUseAsyncData.__nuxt_factory({
+	lazy: true,
+	_functionName: "useLazyAsyncData"
+});
+function writableComputedRef(getter) {
+	return computed({
+		get() {
+			return getter()?.value;
+		},
+		set(value) {
+			const ref = getter();
+			if (ref) ref.value = value;
+		}
+	});
+}
+function _isAutoKeyNeeded(keyOrFetcher, fetcher) {
+	if (typeof keyOrFetcher === "string") return false;
+	if (typeof keyOrFetcher === "object" && keyOrFetcher !== null) return false;
+	if (typeof keyOrFetcher === "function" && typeof fetcher === "function") return false;
+	return true;
+}
+function clearNuxtDataByKey(nuxtApp, key) {
+	delete nuxtApp.payload.data[key];
+	delete nuxtApp.payload._errors[key];
+	if (nuxtApp._asyncData[key]) {
+		nuxtApp._asyncData[key].data.value = unref(nuxtApp._asyncData[key]._default());
+		nuxtApp._asyncData[key].error.value = void 0;
+		nuxtApp._asyncData[key].status.value = "idle";
+		nuxtApp._asyncData[key]._initialCachedData = void 0;
+	}
+	delete nuxtApp._asyncDataPromises[key];
+}
+function pick(obj, keys) {
+	const newObj = {};
+	for (const key of keys) newObj[key] = obj[key];
+	return newObj;
+}
+function buildAsyncData(nuxtApp, key, _handler, options, initialCachedData) {
+	nuxtApp.payload._errors[key] ??= void 0;
+	const hasCustomGetCachedData = options.getCachedData !== getDefaultCachedData;
+	const handler = _handler ;
+	const _ref = options.deep ? ref : shallowRef;
+	const hasCachedData = initialCachedData !== void 0;
+	const unsubRefreshAsyncData = nuxtApp.hook("app:data:refresh", async (keys) => {
+		if (!keys || keys.includes(key)) await asyncData.execute({ cause: "refresh:hook" });
+	});
+	const asyncData = {
+		data: _ref(hasCachedData ? initialCachedData : options.default()),
+		pending: computed(() => asyncData.status.value === "pending"),
+		error: toRef(nuxtApp.payload._errors, key),
+		status: shallowRef("idle"),
+		execute: (...args) => {
+			const [_opts, newValue = void 0] = args;
+			const opts = _opts && newValue === void 0 && typeof _opts === "object" ? _opts : {};
+			if (nuxtApp._asyncDataPromises[key]) {
+				if ((opts.dedupe ?? options.dedupe) === "defer") return nuxtApp._asyncDataPromises[key];
+			}
+			{
+				const cachedData = "cachedData" in opts ? opts.cachedData : options.getCachedData(key, nuxtApp, { cause: opts.cause ?? "refresh:manual" });
+				if (cachedData !== void 0) {
+					nuxtApp.payload.data[key] = asyncData.data.value = cachedData;
+					asyncData.error.value = void 0;
+					asyncData.status.value = "success";
+					return Promise.resolve(cachedData);
+				}
+			}
+			if (toValue(options.enabled) === false) return Promise.resolve(asyncData.data.value);
+			if (asyncData._abortController) asyncData._abortController.abort(new DOMException("AsyncData request cancelled by deduplication", "AbortError"));
+			asyncData._abortController = new AbortController();
+			asyncData.status.value = "pending";
+			const cleanupController = new AbortController();
+			const promise = new Promise((resolve, reject) => {
+				try {
+					const timeout = opts.timeout ?? options.timeout;
+					const mergedSignal = mergeAbortSignals([asyncData._abortController?.signal, opts?.signal], cleanupController.signal, timeout);
+					if (mergedSignal.aborted) {
+						const reason = mergedSignal.reason;
+						reject(reason instanceof Error ? reason : new DOMException(String(reason ?? "Aborted"), "AbortError"));
+						return;
+					}
+					mergedSignal.addEventListener("abort", () => {
+						const reason = mergedSignal.reason;
+						reject(reason instanceof Error ? reason : new DOMException(String(reason ?? "Aborted"), "AbortError"));
+					}, {
+						once: true,
+						signal: cleanupController.signal
+					});
+					return Promise.resolve(handler(nuxtApp, { signal: mergedSignal })).then(resolve, reject);
+				} catch (err) {
+					reject(err);
+				}
+			}).then(async (_result) => {
+				if (nuxtApp._asyncDataPromises[key] !== promise) return;
+				let result = _result;
+				if (options.transform) result = await options.transform(_result);
+				if (options.pick) result = pick(result, options.pick);
+				nuxtApp.payload.data[key] = result;
+				asyncData.data.value = result;
+				asyncData.error.value = void 0;
+				asyncData.status.value = "success";
+			}).catch((error) => {
+				if (nuxtApp._asyncDataPromises[key] !== promise) return nuxtApp._asyncDataPromises[key];
+				if (asyncData._abortController?.signal.aborted) return nuxtApp._asyncDataPromises[key];
+				if (typeof DOMException !== "undefined" && error instanceof DOMException && error.name === "AbortError") {
+					asyncData.status.value = "idle";
+					return nuxtApp._asyncDataPromises[key];
+				}
+				asyncData.error.value = createError$1(error);
+				asyncData.data.value = unref(options.default());
+				asyncData.status.value = "error";
+			}).finally(() => {
+				cleanupController.abort();
+				if (nuxtApp._asyncDataPromises[key] === promise) delete nuxtApp._asyncDataPromises[key];
+			});
+			nuxtApp._asyncDataPromises[key] = promise;
+			return nuxtApp._asyncDataPromises[key];
+		},
+		_execute: debounceTick((...args) => asyncData.execute(...args)),
+		_default: options.default,
+		_deps: 0,
+		_init: true,
+		_hash: void 0,
+		_off: () => {
+			unsubRefreshAsyncData();
+			if (nuxtApp._asyncData[key]?._init) nuxtApp._asyncData[key]._init = false;
+			if (nuxtApp._asyncDataPromises[key]) {
+				asyncData._abortController?.abort(new DOMException("AsyncData request cancelled by unmount", "AbortError"));
+				delete nuxtApp._asyncDataPromises[key];
+				if (asyncData.status.value === "pending") asyncData.status.value = "idle";
+			}
+			if (!hasCustomGetCachedData) nextTick(() => {
+				if (!nuxtApp._asyncData[key]?._init) {
+					clearNuxtDataByKey(nuxtApp, key);
+					asyncData.execute = () => Promise.resolve();
+				}
+			});
+		}
+	};
+	return asyncData;
+}
+var getDefault = () => void 0;
+var getDefaultCachedData = (key, nuxtApp, ctx) => {
+	if (nuxtApp.isHydrating) return nuxtApp.payload.data[key];
+	if (ctx.cause !== "refresh:manual" && ctx.cause !== "refresh:hook") return nuxtApp.static.data[key];
+};
+function mergeAbortSignals(signals, cleanupSignal, timeout) {
+	const list = signals.filter((s) => !!s);
+	if (typeof timeout === "number" && timeout >= 0) {
+		const timeoutSignal = AbortSignal.timeout?.(timeout);
+		if (timeoutSignal) list.push(timeoutSignal);
+	}
+	if (AbortSignal.any) return AbortSignal.any(list);
+	const controller = new AbortController();
+	for (const sig of list) if (sig.aborted) {
+		const reason = sig.reason ?? new DOMException("Aborted", "AbortError");
+		try {
+			controller.abort(reason);
+		} catch {
+			controller.abort();
+		}
+		return controller.signal;
+	}
+	const onAbort = () => {
+		const reason = list.find((s) => s.aborted)?.reason ?? new DOMException("Aborted", "AbortError");
+		try {
+			controller.abort(reason);
+		} catch {
+			controller.abort();
+		}
+	};
+	for (const sig of list) sig.addEventListener?.("abort", onAbort, {
+		once: true,
+		signal: cleanupSignal
+	});
+	return controller.signal;
+}
+//#endregion
+//#region node_modules/nuxt/dist/app/diagnostics/state.js
+/**
+* E7xxx
+* Payload / state / cookie runtime diagnostics.
+*/
+var stateDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
+	docsBase,
+	reporters: prodReporters
+});
+//#endregion
+//#region node_modules/nuxt/dist/app/composables/state.js
+var useStateKeyPrefix = "$s";
+function useState(...args) {
+	const autoKey = typeof args[args.length - 1] === "string" ? args.pop() : void 0;
+	if (typeof args[0] !== "string") args.unshift(autoKey);
+	const [_key, init] = args;
+	if (!_key || typeof _key !== "string") throw stateDiagnostics.NUXT_E7009({ key: _key });
+	if (init !== void 0 && typeof init !== "function") throw stateDiagnostics.NUXT_E7007({ type: typeof init });
+	const key = useStateKeyPrefix + _key;
+	const nuxtApp = useNuxtApp();
+	const state = toRef(nuxtApp.payload.state, key);
+	if (init) nuxtApp._state[key] ??= { _default: init };
+	if (state.value === void 0 && init) {
+		const initialValue = init();
+		if (isRef(initialValue)) {
+			nuxtApp.payload.state[key] = initialValue;
+			return initialValue;
+		}
+		state.value = initialValue;
+	}
+	return state;
+}
+//#endregion
+//#region node_modules/nuxt/dist/app/composables/ssr.js
+var $fetch$1$1 = $fetch$2;
+/** @since 3.0.0 */
+function useRequestEvent(nuxtApp) {
+	nuxtApp ||= useNuxtApp();
+	return nuxtApp.ssrContext?.event;
+}
+/** @since 3.2.0 */
+function useRequestFetch() {
+	return useRequestEvent()?.$fetch || $fetch$1$1;
+}
+//#endregion
+//#region node_modules/nuxt/dist/app/composables/fetch.js
+var $fetch$1 = $fetch$2;
+var MAYBE_REF_OR_GETTER_OPTION_KEYS = [
+	"method",
+	"baseURL",
+	"query",
+	"params",
+	"body",
+	"headers"
+];
+function generateOptionSegments(opts) {
+	const segments = [toValue(opts.method)?.toUpperCase() || "GET", toValue(opts.baseURL)];
+	for (const _obj of [opts.query || opts.params]) {
+		const obj = toValue(_obj);
+		if (!obj) continue;
+		const unwrapped = {};
+		for (const [key, value] of Object.entries(obj)) unwrapped[toValue(key)] = toValue(value);
+		segments.push(unwrapped);
+	}
+	if (opts.body) {
+		const value = toValue(opts.body);
+		if (!value) segments.push(hashKey(value));
+		else if (value instanceof ArrayBuffer) segments.push(hashKey(Object.fromEntries([...new Uint8Array(value).entries()].map(([k, v]) => [k, v.toString()]))));
+		else if (value instanceof FormData) {
+			const entries = [];
+			for (const entry of value.entries()) {
+				const [key, val] = entry;
+				entries.push([key, val instanceof File ? `${val.name}:${val.size}:${val.lastModified}` : val]);
+			}
+			segments.push(hashKey(entries));
+		} else if (isPlainObject(value)) segments.push(hashKey(reactive(value)));
+		else try {
+			segments.push(hashKey(value));
+		} catch {
+			dataDiagnostics.NUXT_E3002({ cause: value });
+		}
+	}
+	return segments;
+}
+/**
+* A factory function to create a custom `useFetch` composable with pre-defined default options.
+* @since 4.2.0
+*/
+var createUseFetch = defineKeyedFunctionFactory({
+	name: "createUseFetch",
+	factory(options = {}) {
+		function useFetch(request, arg1, arg2) {
+			const [opts = {}, autoKey] = typeof arg1 === "string" ? [{}, arg1] : [arg1, arg2];
+			const factoryOptions = typeof options === "function" ? options(opts) : options;
+			const { server, lazy, default: defaultFn, transform, pick, watch: watchSources, immediate, getCachedData, deep, dedupe, timeout, enabled, ...fetchOptions } = {
+				...typeof options === "function" ? {} : factoryOptions,
+				...opts,
+				...typeof options === "function" ? factoryOptions : {}
+			};
+			const _request = computed(() => toValue(request));
+			const key = computed(() => toValue(fetchOptions.key) || "$f" + hashKey([
+				autoKey,
+				typeof _request.value === "string" ? _request.value : "",
+				...generateOptionSegments(fetchOptions)
+			]));
+			if (!fetchOptions.baseURL && typeof _request.value === "string" && _request.value[0] === "/" && _request.value[1] === "/") throw dataDiagnostics.NUXT_E3001({ url: _request.value });
+			const _fetchOptions = reactive({
+				...fetchDefaults,
+				...fetchOptions,
+				cache: typeof fetchOptions.cache === "boolean" ? void 0 : fetchOptions.cache
+			});
+			const _asyncDataOptions = {
+				server,
+				lazy,
+				default: defaultFn,
+				transform,
+				pick,
+				immediate,
+				getCachedData,
+				deep,
+				dedupe,
+				timeout,
+				enabled,
+				watch: watchSources === false ? [] : [...watchSources || [], _fetchOptions]
+			};
+			if (watchSources === false) _asyncDataOptions._keyTriggersExecute = false;
+			return useAsyncData(key, (_, { signal }) => {
+				let _$fetch = fetchOptions.$fetch || $fetch$1;
+				if (!fetchOptions.$fetch) {
+					if (typeof _request.value === "string" && _request.value[0] === "/" && (!toValue(fetchOptions.baseURL) || toValue(fetchOptions.baseURL)[0] === "/")) _$fetch = useRequestFetch();
+				}
+				const resolvedOptions = {
+					signal,
+					..._fetchOptions
+				};
+				for (const key of MAYBE_REF_OR_GETTER_OPTION_KEYS) if (typeof resolvedOptions[key] === "function") resolvedOptions[key] = toValue(resolvedOptions[key]);
+				return _$fetch(_request.value, resolvedOptions);
+			}, _asyncDataOptions);
+		}
+		return useFetch;
+	}
+});
+createUseFetch.__nuxt_factory();
+createUseFetch.__nuxt_factory({
+	lazy: true,
+	_functionName: "useLazyFetch"
+});
+//#endregion
+//#region node_modules/nuxt/dist/app/diagnostics/manifest.js
+/**
+* E5xxx
+* App manifest / route-rules runtime diagnostics.
+*/
+var manifestDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
+	docsBase,
+	reporters: prodReporters
+});
 //#endregion
 //#region node_modules/nuxt/dist/pages/runtime/router.options.js
 var router_options_default = { scrollBehavior(to, from, savedPosition) {
@@ -852,49 +1645,40 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default =
 	scrollBehaviorType: "auto",
 	...router_options_default
 };
-Object.assign(Object.create(null), {});
-var pageIslandRoutes = Object.assign(Object.create(null), {});
-//#endregion
-//#region node_modules/nuxt/dist/pages/runtime/validate.js
-var middleware$1 = /* @__PURE__ */ defineNuxtRouteMiddleware(async (to) => {
-	let __temp, __restore;
-	if (!to.meta?.validate) return;
-	const result = ([__temp, __restore] = executeAsync(() => Promise.resolve(to.meta.validate(to))), __temp = await __temp, __restore(), __temp);
-	if (result === true) return;
-	return createError$1({
-		fatal: false,
-		status: result && (result.status || result.statusCode) || 404,
-		statusText: result && (result.statusText || result.statusMessage) || `Page Not Found: ${to.fullPath}`,
-		data: { path: to.fullPath }
-	});
-});
-//#endregion
-//#region node_modules/nuxt/dist/app/diagnostics/manifest.js
-/**
-* E5xxx
-* App manifest / route-rules runtime diagnostics.
-*/
-var manifestDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
-	docsBase,
-	reporters: prodReporters
-});
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Froute-rules.mjs
 var sensitiveMatcher = /* @__PURE__ */ (() => {
-	const $0 = { appMiddleware: {} };
+	const $0 = {};
 	return (m, p) => {
 		let r = [];
 		if (p.charCodeAt(p.length - 1) === 47) p = p.slice(0, -1);
+		if (p === "/_nuxt") r.push({ data: $0 });
+		else if (p.charCodeAt(p.length - 1) === 47) {
+			if (p === "/_nuxt/") r.push({ data: $0 });
+		}
 		let s = p.split("/");
 		if (s.length > 1 && s[s.length - 1] === "") {
 			s.pop();
 			p = p.slice(0, -1);
 		}
-		if (s.length > 1) {
-			if (s[1] === "admin") r.push({
-				data: $0,
-				params: { "_": p.slice(7) }
-			});
+		let l = s.length;
+		if (l > 1) {
+			if (s[1] === "_og") {
+				if (l > 2) {
+					if (s[2] === "d") r.push({
+						data: $0,
+						params: { "_": p.slice(7) }
+					});
+					else if (s[2] === "r") r.push({
+						data: $0,
+						params: { "_": p.slice(7) }
+					});
+					else if (s[2] === "s") r.push({
+						data: $0,
+						params: { "_": p.slice(7) }
+					});
+				}
+			}
 		}
 		return r.reverse();
 	};
@@ -932,238 +1716,6 @@ function getRouteRules(arg) {
 	}
 }
 //#endregion
-//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fmiddleware.mjs
-var globalMiddleware = [middleware$1, /* @__PURE__ */ defineNuxtRouteMiddleware((to) => {})];
-var namedMiddleware = {};
-//#endregion
-//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Froutes.mjs
-var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
-	{
-		name: "insights-slug",
-		path: "/insights/:slug()",
-		component: () => import('../build/_slug_-DYEDYgWC.mjs')
-	},
-	{
-		name: "insights",
-		path: "/insights",
-		component: () => import('../build/insights-BKAyaSzi.mjs')
-	},
-	{
-		name: "products",
-		path: "/products",
-		component: () => import('../build/products-Cl6plmU1.mjs')
-	},
-	{
-		name: "index",
-		path: "/",
-		component: () => import('../build/pages-BMFi_ACj.mjs')
-	}
-];
-//#endregion
-//#region node_modules/nuxt/dist/pages/runtime/plugins/router.js
-var plugin$1 = /* @__PURE__ */ defineNuxtPlugin({
-	name: "nuxt:router",
-	enforce: "pre",
-	async setup(nuxtApp) {
-		let __temp, __restore;
-		let routerBase = (/* @__PURE__ */ useRuntimeConfig()).app.baseURL;
-		const history = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.history?.(routerBase) ?? createMemoryHistory(routerBase);
-		const routes = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.routes ? ([__temp, __restore] = executeAsync(() => virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.routes(virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default)), __temp = await __temp, __restore(), __temp) ?? virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default : virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default;
-		let startPosition;
-		const router = createRouter({
-			...virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default,
-			scrollBehavior: (to, from, savedPosition) => {
-				if (from === START_LOCATION) {
-					startPosition = savedPosition;
-					return;
-				}
-				if (virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior) {
-					router.options.scrollBehavior = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior;
-					if ("scrollRestoration" in (void 0).history) {
-						const unsub = router.beforeEach(() => {
-							unsub();
-							(void 0).history.scrollRestoration = "manual";
-						});
-					}
-					return virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior(to, START_LOCATION, startPosition || savedPosition);
-				}
-			},
-			history,
-			routes
-		});
-		nuxtApp.vueApp.use(router);
-		const previousRoute = shallowRef(router.currentRoute.value);
-		router.afterEach((_to, from) => {
-			previousRoute.value = from;
-		});
-		Object.defineProperty(nuxtApp.vueApp.config.globalProperties, "previousRoute", { get: () => previousRoute.value });
-		const initialURL = nuxtApp.ssrContext.url;
-		const _route = shallowRef(router.currentRoute.value);
-		const syncCurrentRoute = () => {
-			_route.value = router.currentRoute.value;
-		};
-		router.afterEach((to, from) => {
-			const lastTo = to.matched.at(-1)?.components?.default;
-			const lastFrom = from.matched.at(-1)?.components?.default;
-			if (lastTo === lastFrom) {
-				if (generateRouteKey$1({
-					route: to,
-					Component: { type: lastTo }
-				}) === generateRouteKey$1({
-					route: from,
-					Component: { type: lastFrom }
-				})) syncCurrentRoute();
-				return;
-			}
-			if (to.matched.length < from.matched.length && to.matched.every((m, i) => m.components?.default === from.matched[i]?.components?.default)) syncCurrentRoute();
-		});
-		const route = { sync: syncCurrentRoute };
-		for (const key in _route.value) Object.defineProperty(route, key, {
-			get: () => _route.value[key],
-			enumerable: true
-		});
-		nuxtApp._route = shallowReactive(route);
-		nuxtApp._middleware ||= {
-			global: [],
-			named: {}
-		};
-		const error = /* @__PURE__ */ useError();
-		const isServerPage = nuxtApp.ssrContext?.islandContext?.name?.startsWith("page_");
-		if (!nuxtApp.ssrContext?.islandContext || isServerPage) router.afterEach(async (to, _from, failure) => {
-			delete nuxtApp._processingMiddleware;
-			delete nuxtApp._middlewareTo;
-			if (failure) await nuxtApp.callHook("page:loading:end");
-			if (failure?.type === 4) return;
-			if (to.redirectedFrom && to.fullPath !== initialURL) await nuxtApp.runWithContext(() => navigateTo(to.fullPath || "/"));
-		});
-		try {
-			[__temp, __restore] = executeAsync(() => router.push(initialURL)), __temp = await __temp, __restore();
-			[__temp, __restore] = executeAsync(() => router.isReady()), await __temp, __restore();
-		} catch (error) {
-			[__temp, __restore] = executeAsync(() => _showErrorUnlessCrawler(nuxtApp, error)), await __temp, __restore();
-		}
-		const resolvedInitialRoute = router.currentRoute.value;
-		syncCurrentRoute();
-		if (nuxtApp.ssrContext?.islandContext && !isServerPage) return { provide: { router } };
-		const initialLayout = nuxtApp.payload.state._layout;
-		router.beforeEach(async (to, from) => {
-			await nuxtApp.callHook("page:loading:start");
-			to.meta = reactive(to.meta);
-			if (nuxtApp.isHydrating && initialLayout && !isReadonly(to.meta.layout)) to.meta.layout = initialLayout;
-			nuxtApp._processingMiddleware = true;
-			nuxtApp._middlewareTo = to;
-			if (!nuxtApp.ssrContext?.islandContext || isServerPage) {
-				const middlewareEntries = /* @__PURE__ */ new Set([...globalMiddleware, ...nuxtApp._middleware.global]);
-				for (const component of to.matched) {
-					const componentMiddleware = component.meta.middleware;
-					if (!componentMiddleware) continue;
-					for (const entry of toArray(componentMiddleware)) middlewareEntries.add(entry);
-				}
-				const routeRules = getRouteRules({ path: to.path });
-				if (routeRules.appMiddleware) for (const key in routeRules.appMiddleware) if (routeRules.appMiddleware[key]) middlewareEntries.add(key);
-				else middlewareEntries.delete(key);
-				for (const entry of middlewareEntries) {
-					const middleware = typeof entry === "string" ? nuxtApp._middleware.named[entry] || await namedMiddleware[entry]?.().then((r) => r.default || r) : entry;
-					if (!middleware) throw navigationDiagnostics.NUXT_E2004({
-						entry: String(entry),
-						validMiddleware: void 0
-					});
-					try {
-						const result = await nuxtApp.runWithContext(() => middleware(to, from));
-						if (result === false || result instanceof Error) {
-							const error = result || createError$1({
-								status: 404,
-								statusText: `Page Not Found: ${initialURL}`
-							});
-							await nuxtApp.runWithContext(() => showError(error));
-							return false;
-						}
-						if (result === true) continue;
-						if (result === false) return result;
-						if (result) {
-							if (isNuxtError(result) && result.fatal) await nuxtApp.runWithContext(() => showError(result));
-							return result;
-						}
-					} catch (err) {
-						const error = createError$1(err);
-						if (error.fatal) await nuxtApp.runWithContext(() => showError(error));
-						return error;
-					}
-				}
-			}
-		});
-		if (isServerPage) router.beforeResolve((to) => {
-			const expected = pageIslandRoutes[nuxtApp.ssrContext.islandContext.name];
-			const actual = to.matched.find((m) => (m.components?.default)?.__nuxt_island)?.components?.default;
-			if (!expected || expected !== actual?.__nuxt_island) {
-				nuxtApp.ssrContext["~renderResponse"] = {
-					statusCode: 400,
-					statusMessage: "Invalid island request path"
-				};
-				return false;
-			}
-		});
-		router.onError(async () => {
-			delete nuxtApp._processingMiddleware;
-			delete nuxtApp._middlewareTo;
-			await nuxtApp.callHook("page:loading:end");
-		});
-		router.afterEach((to) => {
-			if (to.matched.length === 0 && !error.value) return nuxtApp.runWithContext(() => showError(createError$1({
-				status: 404,
-				fatal: false,
-				statusText: `Page not found: ${to.fullPath}`,
-				data: { path: to.fullPath }
-			})));
-		});
-		nuxtApp.hooks.hookOnce("app:created", async () => {
-			try {
-				if ("name" in resolvedInitialRoute) resolvedInitialRoute.name = void 0;
-				await router.replace({
-					...resolvedInitialRoute,
-					force: true
-				});
-				router.options.scrollBehavior = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior;
-			} catch (error) {
-				await _showErrorUnlessCrawler(nuxtApp, error);
-			}
-		});
-		return { provide: { router } };
-	}
-});
-//#endregion
-//#region node_modules/nuxt/dist/app/diagnostics/head.js
-/**
-* E6xxx
-* Head / unhead runtime diagnostics.
-*/
-var unheadDiagnostics = /* #__PURE__ */ defineProdDiagnostics({
-	docsBase,
-	reporters: prodReporters
-});
-//#endregion
-//#region node_modules/nuxt/dist/head/runtime/composables.js
-/**
-* Injects the head client from the Nuxt context or Vue inject.
-*/
-function injectHead(nuxtApp) {
-	const nuxt = nuxtApp || useNuxtApp();
-	return nuxt.ssrContext?.head || nuxt.runWithContext(() => {
-		if (hasInjectionContext()) {
-			const head = inject(headSymbol);
-			if (!head) throw unheadDiagnostics.NUXT_E6001();
-			return head;
-		}
-	});
-}
-function useHead$1(input, options = {}) {
-	const head = options.head || injectHead(options.nuxt);
-	return useHead(input, {
-		head,
-		...options
-	});
-}
-//#endregion
 //#region node_modules/nuxt/dist/app/composables/payload.js
 /**
 * This is an experimental function for configuring passing rich data from server -> client.
@@ -1171,120 +1723,6 @@ function useHead$1(input, options = {}) {
 */
 function definePayloadReducer(name, reduce) {
 	useNuxtApp().ssrContext["~payloadReducers"][name] = reduce;
-}
-//#endregion
-//#region node_modules/nuxt/dist/app/plugins/revive-payload.server.js
-var reducers = [
-	["NuxtError", (data) => isNuxtError(data) && data.toJSON()],
-	["EmptyShallowRef", (data) => isRef(data) && isShallow(data) && !data.value && (typeof data.value === "bigint" ? "0n" : JSON.stringify(data.value) || "_")],
-	["EmptyRef", (data) => isRef(data) && !data.value && (typeof data.value === "bigint" ? "0n" : JSON.stringify(data.value) || "_")],
-	["ShallowRef", (data) => isRef(data) && isShallow(data) && data.value],
-	["ShallowReactive", (data) => isReactive(data) && isShallow(data) && toRaw(data)],
-	["Ref", (data) => isRef(data) && data.value],
-	["Reactive", (data) => isReactive(data) && toRaw(data)]
-];
-//#endregion
-//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fplugins.server.mjs
-var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fplugins_server_default = [
-	plugin$2,
-	plugin$1,
-	/* @__PURE__ */ defineNuxtPlugin({
-		name: "nuxt:revive-payload:server",
-		setup() {
-			for (const [reducer, fn] of reducers) definePayloadReducer(reducer, fn);
-		}
-	}),
-	/* @__PURE__ */ defineNuxtPlugin({ name: "nuxt:global-components" })
-];
-//#endregion
-//#region node_modules/nuxt/dist/app/components/route-provider.js
-var defineRouteProvider = (name = "RouteProvider") => defineComponent({
-	name,
-	props: {
-		route: {
-			type: Object,
-			required: true
-		},
-		vnode: Object,
-		vnodeRef: Object,
-		renderKey: String,
-		trackRootNodes: Boolean,
-		routeRecord: Object
-	},
-	setup(props) {
-		const previousKey = props.renderKey;
-		const previousRoute = props.route;
-		const route = {};
-		for (const key in props.route) Object.defineProperty(route, key, {
-			get: () => previousKey === props.renderKey ? props.route[key] : previousRoute[key],
-			enumerable: true
-		});
-		provide(PageRouteSymbol, shallowReactive(route));
-		return () => {
-			if (!props.vnode) return props.vnode;
-			return h(props.vnode, { ref: props.vnodeRef });
-		};
-	}
-});
-var RouteProvider = defineRouteProvider();
-//#endregion
-//#region node_modules/nuxt/dist/pages/runtime/page.js
-var page_default = defineComponent({
-	name: "NuxtPage",
-	inheritAttrs: false,
-	props: {
-		name: { type: String },
-		transition: {
-			type: [Boolean, Object],
-			default: void 0
-		},
-		keepalive: {
-			type: [Boolean, Object],
-			default: void 0
-		},
-		route: { type: Object },
-		pageKey: {
-			type: [Function, String],
-			default: null
-		}
-	},
-	setup(props, { attrs, slots, expose }) {
-		const nuxtApp = useNuxtApp();
-		const pageRef = ref();
-		inject(PageRouteSymbol, null);
-		expose({ pageRef });
-		inject(LayoutMetaSymbol, null);
-		nuxtApp.deferHydration();
-		return () => {
-			return h(RouterView, {
-				name: props.name,
-				route: props.route,
-				...attrs
-			}, { default: markStableSlot((routeProps) => {
-				return h(Suspense, { suspensible: true }, { default() {
-					return h(RouteProvider, {
-						vnode: slots.default ? normalizeSlot(slots.default, routeProps) : routeProps.Component,
-						route: routeProps.route,
-						vnodeRef: pageRef
-					});
-				} });
-			}) });
-		};
-	}
-});
-function markStableSlot(fn) {
-	const wrapped = ((routeProps) => {
-		const result = fn(routeProps);
-		if (Array.isArray(result)) return result;
-		if (result == null || !isVNode(result)) return [createCommentVNode()];
-		return [result];
-	});
-	wrapped._n = true;
-	return wrapped;
-}
-function normalizeSlot(slot, data) {
-	const slotContent = slot(data);
-	return slotContent.length === 1 ? h(slotContent[0]) : h(Fragment, void 0, slotContent);
 }
 //#endregion
 //#region node_modules/nuxt/dist/app/components/nuxt-link.js
@@ -1554,6 +1992,2578 @@ function applyTrailingSlashBehavior(to, trailingSlash) {
 	return normalizeFn(to, true);
 }
 //#endregion
+//#region node_modules/nuxt-site-config/dist/runtime/app/plugins/0.siteConfig.js
+var _0_siteConfig_default = /* @__PURE__ */ defineNuxtPlugin({
+	name: "nuxt-site-config:init",
+	enforce: "pre",
+	async setup(nuxtApp) {
+		const stack = useRequestEvent()?.context?.siteConfig;
+		const state = useState("site-config");
+		nuxtApp.hooks.hook("app:rendered", () => {
+			state.value = stack?.get({
+				debug: (/* @__PURE__ */ useRuntimeConfig())["nuxt-site-config"].debug,
+				resolveRefs: true
+			});
+		});
+		return { provide: { nuxtSiteConfig: stack } };
+	}
+});
+//#endregion
+//#region node_modules/nuxt/dist/head/runtime/island-head.js
+/**
+* No-op `head.push` until the returned `unfreeze` runs. Plugin/transformer
+* augmentations on the same head are unaffected.
+*/
+function freezeHead(head) {
+	const realPush = head.push;
+	head.push = () => ({
+		dispose: () => {},
+		patch: () => {},
+		_i: 0
+	});
+	return () => {
+		head.push = realPush;
+	};
+}
+//#endregion
+//#region node_modules/nuxt/dist/head/runtime/plugins/unhead.server.js
+var plugin$2 = /* @__PURE__ */ defineNuxtPlugin({
+	name: "nuxt:head",
+	enforce: "pre",
+	setup(nuxtApp) {
+		const head = nuxtApp.ssrContext.head;
+		if (nuxtApp.ssrContext.islandContext) {
+			const unfreeze = freezeHead(head);
+			nuxtApp.hooks.hookOnce("app:created", unfreeze);
+		}
+		nuxtApp.vueApp.use(head);
+	}
+});
+//#endregion
+//#region node_modules/nuxt/dist/pages/runtime/utils.js
+var ROUTE_KEY_PARENTHESES_RE = /(:\w+)\([^)]+\)/g;
+var ROUTE_KEY_SYMBOLS_RE = /(:\w+)[?+*]/g;
+var ROUTE_KEY_NORMAL_RE = /:\w+/g;
+var interpolatePath = (route, match) => {
+	return match.path.replace(ROUTE_KEY_PARENTHESES_RE, "$1").replace(ROUTE_KEY_SYMBOLS_RE, "$1").replace(ROUTE_KEY_NORMAL_RE, (r) => route.params[r.slice(1)]?.toString() || "");
+};
+var generateRouteKey = (routeProps, override) => {
+	const matchedRoute = routeProps.route.matched.find((m) => m.components?.default === routeProps.Component.type);
+	const source = matchedRoute?.meta.key ?? (matchedRoute && interpolatePath(routeProps.route, matchedRoute));
+	return typeof source === "function" ? source(routeProps.route) : source;
+};
+/** @since 3.9.0 */
+function toArray(value) {
+	return Array.isArray(value) ? value : [value];
+}
+Object.assign(Object.create(null), {});
+var pageIslandRoutes = Object.assign(Object.create(null), {});
+//#endregion
+//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fmiddleware.mjs
+var globalMiddleware = [/* @__PURE__ */ defineNuxtRouteMiddleware(async (to) => {
+	let __temp, __restore;
+	if (!to.meta?.validate) return;
+	const result = ([__temp, __restore] = executeAsync(() => Promise.resolve(to.meta.validate(to))), __temp = await __temp, __restore(), __temp);
+	if (result === true) return;
+	return createError$1({
+		fatal: false,
+		status: result && (result.status || result.statusCode) || 404,
+		statusText: result && (result.statusText || result.statusMessage) || `Page Not Found: ${to.fullPath}`,
+		data: { path: to.fullPath }
+	});
+}), /* @__PURE__ */ defineNuxtRouteMiddleware((to) => {})];
+var namedMiddleware = {};
+//#endregion
+//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Froutes.mjs
+var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
+	{
+		name: "insights-slug",
+		path: "/insights/:slug()",
+		component: () => import('../build/_slug_-DYEDYgWC.mjs')
+	},
+	{
+		name: "products-slug",
+		path: "/products/:slug()",
+		component: () => import('../build/_slug_-BwAVM2CR.mjs')
+	},
+	{
+		name: "insights",
+		path: "/insights",
+		component: () => import('../build/insights-BKAyaSzi.mjs')
+	},
+	{
+		name: "products",
+		path: "/products",
+		component: () => import('../build/products-DqU8GVKq.mjs')
+	},
+	{
+		name: "index",
+		path: "/",
+		component: () => import('../build/pages-BMFi_ACj.mjs')
+	}
+];
+//#endregion
+//#region node_modules/nuxt/dist/pages/runtime/plugins/router.js
+var plugin$1 = /* @__PURE__ */ defineNuxtPlugin({
+	name: "nuxt:router",
+	enforce: "pre",
+	async setup(nuxtApp) {
+		let __temp, __restore;
+		let routerBase = (/* @__PURE__ */ useRuntimeConfig()).app.baseURL;
+		const history = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.history?.(routerBase) ?? createMemoryHistory(routerBase);
+		const routes = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.routes ? ([__temp, __restore] = executeAsync(() => virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.routes(virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default)), __temp = await __temp, __restore(), __temp) ?? virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default : virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default;
+		let startPosition;
+		const router = createRouter({
+			...virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default,
+			scrollBehavior: (to, from, savedPosition) => {
+				if (from === START_LOCATION) {
+					startPosition = savedPosition;
+					return;
+				}
+				if (virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior) {
+					router.options.scrollBehavior = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior;
+					if ("scrollRestoration" in (void 0).history) {
+						const unsub = router.beforeEach(() => {
+							unsub();
+							(void 0).history.scrollRestoration = "manual";
+						});
+					}
+					return virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior(to, START_LOCATION, startPosition || savedPosition);
+				}
+			},
+			history,
+			routes
+		});
+		nuxtApp.vueApp.use(router);
+		const previousRoute = shallowRef(router.currentRoute.value);
+		router.afterEach((_to, from) => {
+			previousRoute.value = from;
+		});
+		Object.defineProperty(nuxtApp.vueApp.config.globalProperties, "previousRoute", { get: () => previousRoute.value });
+		const initialURL = nuxtApp.ssrContext.url;
+		const _route = shallowRef(router.currentRoute.value);
+		const syncCurrentRoute = () => {
+			_route.value = router.currentRoute.value;
+		};
+		router.afterEach((to, from) => {
+			const lastTo = to.matched.at(-1)?.components?.default;
+			const lastFrom = from.matched.at(-1)?.components?.default;
+			if (lastTo === lastFrom) {
+				if (generateRouteKey({
+					route: to,
+					Component: { type: lastTo }
+				}) === generateRouteKey({
+					route: from,
+					Component: { type: lastFrom }
+				})) syncCurrentRoute();
+				return;
+			}
+			if (to.matched.length < from.matched.length && to.matched.every((m, i) => m.components?.default === from.matched[i]?.components?.default)) syncCurrentRoute();
+		});
+		const route = { sync: syncCurrentRoute };
+		for (const key in _route.value) Object.defineProperty(route, key, {
+			get: () => _route.value[key],
+			enumerable: true
+		});
+		nuxtApp._route = shallowReactive(route);
+		nuxtApp._middleware ||= {
+			global: [],
+			named: {}
+		};
+		const error = /* @__PURE__ */ useError();
+		const isServerPage = nuxtApp.ssrContext?.islandContext?.name?.startsWith("page_");
+		if (!nuxtApp.ssrContext?.islandContext || isServerPage) router.afterEach(async (to, _from, failure) => {
+			delete nuxtApp._processingMiddleware;
+			delete nuxtApp._middlewareTo;
+			if (failure) await nuxtApp.callHook("page:loading:end");
+			if (failure?.type === 4) return;
+			if (to.redirectedFrom && to.fullPath !== initialURL) await nuxtApp.runWithContext(() => navigateTo(to.fullPath || "/"));
+		});
+		try {
+			[__temp, __restore] = executeAsync(() => router.push(initialURL)), __temp = await __temp, __restore();
+			[__temp, __restore] = executeAsync(() => router.isReady()), await __temp, __restore();
+		} catch (error) {
+			[__temp, __restore] = executeAsync(() => _showErrorUnlessCrawler(nuxtApp, error)), await __temp, __restore();
+		}
+		const resolvedInitialRoute = router.currentRoute.value;
+		syncCurrentRoute();
+		if (nuxtApp.ssrContext?.islandContext && !isServerPage) return { provide: { router } };
+		const initialLayout = nuxtApp.payload.state._layout;
+		router.beforeEach(async (to, from) => {
+			await nuxtApp.callHook("page:loading:start");
+			to.meta = reactive(to.meta);
+			if (nuxtApp.isHydrating && initialLayout && !isReadonly(to.meta.layout)) to.meta.layout = initialLayout;
+			nuxtApp._processingMiddleware = true;
+			nuxtApp._middlewareTo = to;
+			if (!nuxtApp.ssrContext?.islandContext || isServerPage) {
+				const middlewareEntries = /* @__PURE__ */ new Set([...globalMiddleware, ...nuxtApp._middleware.global]);
+				for (const component of to.matched) {
+					const componentMiddleware = component.meta.middleware;
+					if (!componentMiddleware) continue;
+					for (const entry of toArray(componentMiddleware)) middlewareEntries.add(entry);
+				}
+				const routeRules = getRouteRules({ path: to.path });
+				if (routeRules.appMiddleware) for (const key in routeRules.appMiddleware) if (routeRules.appMiddleware[key]) middlewareEntries.add(key);
+				else middlewareEntries.delete(key);
+				for (const entry of middlewareEntries) {
+					const middleware = typeof entry === "string" ? nuxtApp._middleware.named[entry] || await namedMiddleware[entry]?.().then((r) => r.default || r) : entry;
+					if (!middleware) throw navigationDiagnostics.NUXT_E2004({
+						entry: String(entry),
+						validMiddleware: void 0
+					});
+					try {
+						const result = await nuxtApp.runWithContext(() => middleware(to, from));
+						if (result === false || result instanceof Error) {
+							const error = result || createError$1({
+								status: 404,
+								statusText: `Page Not Found: ${initialURL}`
+							});
+							await nuxtApp.runWithContext(() => showError(error));
+							return false;
+						}
+						if (result === true) continue;
+						if (result === false) return result;
+						if (result) {
+							if (isNuxtError(result) && result.fatal) await nuxtApp.runWithContext(() => showError(result));
+							return result;
+						}
+					} catch (err) {
+						const error = createError$1(err);
+						if (error.fatal) await nuxtApp.runWithContext(() => showError(error));
+						return error;
+					}
+				}
+			}
+		});
+		if (isServerPage) router.beforeResolve((to) => {
+			const expected = pageIslandRoutes[nuxtApp.ssrContext.islandContext.name];
+			const actual = to.matched.find((m) => (m.components?.default)?.__nuxt_island)?.components?.default;
+			if (!expected || expected !== actual?.__nuxt_island) {
+				nuxtApp.ssrContext["~renderResponse"] = {
+					statusCode: 400,
+					statusMessage: "Invalid island request path"
+				};
+				return false;
+			}
+		});
+		router.onError(async () => {
+			delete nuxtApp._processingMiddleware;
+			delete nuxtApp._middlewareTo;
+			await nuxtApp.callHook("page:loading:end");
+		});
+		router.afterEach((to) => {
+			if (to.matched.length === 0 && !error.value) return nuxtApp.runWithContext(() => showError(createError$1({
+				status: 404,
+				fatal: false,
+				statusText: `Page not found: ${to.fullPath}`,
+				data: { path: to.fullPath }
+			})));
+		});
+		nuxtApp.hooks.hookOnce("app:created", async () => {
+			try {
+				if ("name" in resolvedInitialRoute) resolvedInitialRoute.name = void 0;
+				await router.replace({
+					...resolvedInitialRoute,
+					force: true
+				});
+				router.options.scrollBehavior = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.scrollBehavior;
+			} catch (error) {
+				await _showErrorUnlessCrawler(nuxtApp, error);
+			}
+		});
+		return { provide: { router } };
+	}
+});
+//#endregion
+//#region node_modules/nuxt/dist/app/plugins/revive-payload.server.js
+var reducers = [
+	["NuxtError", (data) => isNuxtError(data) && data.toJSON()],
+	["EmptyShallowRef", (data) => isRef(data) && isShallow(data) && !data.value && (typeof data.value === "bigint" ? "0n" : JSON.stringify(data.value) || "_")],
+	["EmptyRef", (data) => isRef(data) && !data.value && (typeof data.value === "bigint" ? "0n" : JSON.stringify(data.value) || "_")],
+	["ShallowRef", (data) => isRef(data) && isShallow(data) && data.value],
+	["ShallowReactive", (data) => isReactive(data) && isShallow(data) && toRaw(data)],
+	["Ref", (data) => isRef(data) && data.value],
+	["Reactive", (data) => isReactive(data) && toRaw(data)]
+];
+var plugin = /* @__PURE__ */ defineNuxtPlugin({
+	name: "nuxt:revive-payload:server",
+	setup() {
+		for (const [reducer, fn] of reducers) definePayloadReducer(reducer, fn);
+	}
+});
+//#endregion
+//#region node_modules/nuxt-site-config/dist/runtime/app/composables/useSiteConfig.js
+function useSiteConfig(options) {
+	const stack = useRequestEvent()?.context.siteConfig.get(defu({ resolveRefs: true }, options));
+	delete stack._priority;
+	return stack;
+}
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/plugins/siteConfig.js
+var siteConfig_default = /* @__PURE__ */ defineNuxtPlugin(() => {
+	const head = injectHead();
+	if (!head) return;
+	const { tagPriority, separator, titleSeparator } = (/* @__PURE__ */ useRuntimeConfig()).public["seo-utils"];
+	const siteConfig = useSiteConfig();
+	const resolvedSeparator = siteConfig.separator || separator || siteConfig.titleSeparator || titleSeparator;
+	const resolvedTitleSeparator = siteConfig.titleSeparator || titleSeparator || siteConfig.separator || separator;
+	const input = {
+		meta: [],
+		templateParams: {
+			site: siteConfig,
+			siteUrl: siteConfig.url,
+			siteName: siteConfig.name
+		}
+	};
+	if (resolvedSeparator) input.templateParams.separator = resolvedSeparator;
+	if (resolvedTitleSeparator) input.templateParams.titleSeparator = resolvedTitleSeparator;
+	if (siteConfig.description) {
+		input.templateParams.siteDescription = siteConfig.description;
+		input.meta.push({
+			name: "description",
+			content: "%site.description",
+			tagPriority
+		});
+	}
+	head.push(input);
+});
+//#endregion
+//#region node_modules/@unhead/vue/dist/plugins.mjs
+var plugins_exports = /* @__PURE__ */ __exportAll({});
+__reExport(plugins_exports, import_unhead_plugins);
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/plugins/inferSeoMetaPlugin.js
+var disabledTwitterCard = "x-nuxt-seo-utils-disabled-twitter-card";
+var inferSeoMetaPlugin_default = /* @__PURE__ */ defineNuxtPlugin(() => {
+	const head = injectHead();
+	if (!head) return;
+	const { automaticTwitterTags } = (/* @__PURE__ */ useRuntimeConfig()).public["seo-utils"];
+	head.use(plugins_exports.TemplateParamsPlugin);
+	if (automaticTwitterTags === false) {
+		head.use((0, plugins_exports.InferSeoMetaPlugin)({ twitterCard: disabledTwitterCard }));
+		head.use({
+			key: "nuxt-seo-utils:twitter-card-suppression",
+			hooks: { "tags:beforeResolve": ({ tags }) => {
+				for (let i = tags.length - 1; i >= 0; i--) {
+					const tag = tags[i];
+					if (tag.tag === "meta" && tag.props.name === "twitter:card" && tag.props.content === disabledTwitterCard) tags.splice(i, 1);
+				}
+			} }
+		});
+	} else head.use((0, plugins_exports.InferSeoMetaPlugin)());
+});
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/composables/polyfills.js
+function useI18n() {
+	const siteConfig = useSiteConfig({ resolveRefs: false });
+	return {
+		t: (_, fallback, _options) => fallback,
+		te: (_) => false,
+		strategy: "no_prefix",
+		defaultLocale: computed(() => {
+			return toValue(siteConfig.defaultLocale) || "en";
+		}),
+		locale: computed(() => {
+			return toValue(siteConfig.currentLocale) || toValue(siteConfig.defaultLocale) || "en";
+		})
+	};
+}
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/composables/useFallbackTitle.js
+function useFallbackTitle() {
+	const route = useRoute$2();
+	const err = /* @__PURE__ */ useError();
+	let i18n;
+	try {
+		i18n = useI18n();
+	} catch {}
+	return computed(() => {
+		if (err.value?.statusCode && [404, 500].includes(err.value.statusCode)) return `${err.value.statusCode} - ${err.value.message}`;
+		if (typeof route.meta?.title === "string") return route.meta?.title;
+		const lastSegment = withoutTrailingSlash(route.path || "/").split("/").pop();
+		let fallback = lastSegment ? titleCase(lastSegment) : null;
+		const matched = route.matched?.at(-1);
+		if (matched) {
+			const routeName = String(matched.name).split("___")?.[0];
+			if (routeName && i18n) fallback = i18n.t(`pages.${routeName}.title`, fallback || "", { missingWarn: false }) || fallback;
+		}
+		return fallback;
+	});
+}
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/plugins/titles.js
+var titles_default = /* @__PURE__ */ defineNuxtPlugin({
+	name: "nuxt-seo:fallback-titles",
+	env: { islands: false },
+	setup() {
+		const title = useFallbackTitle();
+		useHead$1({ title: () => title.value }, { tagPriority: 101 });
+	}
+});
+//#endregion
+//#region node_modules/nuxt-schema-org/dist/vendor/schema-org-v3/shared/schema-org.BKJGr5UQ.mjs
+// @__NO_SIDE_EFFECTS__
+function defineSchemaOrgResolver(schema) {
+	return schema;
+}
+var PROTOCOL_RE = /^[\s\w\0+.-]{2,}:(?:[/\\]{2})?/;
+var JOIN_LEADING_SLASH_RE = /^\.?\//;
+function hasProtocol$1(input) {
+	return PROTOCOL_RE.test(input);
+}
+function withoutTrailingSlash$1(input = "") {
+	return (input.endsWith("/") ? input.slice(0, -1) : input) || "/";
+}
+function withTrailingSlash$1(input = "") {
+	return input.endsWith("/") ? input : `${input}/`;
+}
+function joinURL$1(base, input) {
+	if (!input || input === "/") return base || "";
+	return base ? withTrailingSlash$1(base) + input.replace(JOIN_LEADING_SLASH_RE, "") : input;
+}
+function withBase$1(input, base) {
+	if (!base || base === "/" || hasProtocol$1(input)) return input;
+	const normalizedBase = withoutTrailingSlash$1(base);
+	if (input.startsWith(normalizedBase)) {
+		const nextChar = input[normalizedBase.length];
+		if (!nextChar || nextChar === "/" || nextChar === "?") return input;
+	}
+	return joinURL$1(normalizedBase, input);
+}
+function idReference(node) {
+	return { "@id": typeof node !== "string" ? node["@id"] : node };
+}
+var IS_VALID_W3C_DATE = [
+	/(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))|(\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z))/,
+	/^\d{4}-[01]\d-[0-3]\d$/,
+	/^\d{4}-[01]\d$/,
+	/^\d{4}$/
+];
+function isValidW3CDate(d) {
+	return IS_VALID_W3C_DATE.some((r) => r.test(d));
+}
+function resolvableDateToIso(val) {
+	if (!val) return val;
+	try {
+		if (val instanceof Date) return val.toISOString();
+		else if (isValidW3CDate(val)) return val;
+		else return new Date(Date.parse(val)).toISOString();
+	} catch {}
+	return typeof val === "string" ? val : val.toString();
+}
+var IdentityId = "#identity";
+function isHomePage(meta) {
+	return meta.url === meta.host;
+}
+function setIfEmpty(node, field, value) {
+	if (node?.[field] === void 0 && value != null) node[field] = value;
+}
+function asArray(input) {
+	return Array.isArray(input) ? input : [input];
+}
+function prefixId(url, id) {
+	if (hasProtocol$1(id)) return id;
+	if (!id.includes("#")) id = `#${id}`;
+	return `${url || ""}${id}`;
+}
+function resolveDefaultType(node, defaultType) {
+	const val = node["@type"];
+	if (val === defaultType) return;
+	if (typeof val === "string" && typeof defaultType === "string") {
+		if (val !== defaultType) node["@type"] = [defaultType, val];
+		return;
+	}
+	const types = new Set(asArray(defaultType));
+	for (const t of asArray(val)) if (t != null) types.add(t);
+	const resolved = [...types];
+	node["@type"] = resolved.length === 1 ? resolved[0] : resolved;
+}
+function resolveWithBase(base, urlOrPath) {
+	if (!base || !urlOrPath || hasProtocol$1(urlOrPath) || urlOrPath[0] !== "/" && urlOrPath[0] !== "#") return urlOrPath;
+	return withBase$1(urlOrPath, base);
+}
+function resolveAsGraphKey(key) {
+	if (!key) return key;
+	return key.substring(key.lastIndexOf("#"));
+}
+function stripEmptyProperties(obj) {
+	for (const k in obj) {
+		if (!hasOwn(obj, k)) continue;
+		const v = obj[k];
+		if (v === "" || v === void 0) delete obj[k];
+		else if (typeof v === "object" && v !== null) {
+			if (v.__v_isReadonly || v.__v_isRef) continue;
+			stripEmptyProperties(v);
+		}
+	}
+	return obj;
+}
+function stripNullProperties(obj) {
+	if (Array.isArray(obj)) {
+		let next = 0;
+		for (let i = 0; i < obj.length; i++) {
+			const v = obj[i];
+			if (v === null) continue;
+			if (typeof v === "object" && v !== null) stripNullProperties(v);
+			obj[next++] = v;
+		}
+		obj.length = next;
+		return obj;
+	}
+	for (const k in obj) {
+		if (!hasOwn(obj, k)) continue;
+		const v = obj[k];
+		if (v === null) delete obj[k];
+		else if (typeof v === "object") {
+			if (v.__v_isReadonly || v.__v_isRef) continue;
+			stripNullProperties(v);
+		}
+	}
+	return obj;
+}
+var interactionCounterResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "InteractionCounter" } });
+var propertyValueResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "PropertyValue" } });
+var definedRegionResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "DefinedRegion" } });
+var quantitativeValueResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	cast(node) {
+		if (typeof node === "number") return { value: node };
+		return node;
+	},
+	defaults: { "@type": "QuantitativeValue" },
+	resolve(node, ctx) {
+		node.valueReference = resolveRelation(node.valueReference, ctx, quantitativeValueResolver);
+		return node;
+	}
+});
+var monetaryAmountResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "MonetaryAmount" },
+	resolve(node, ctx) {
+		if (typeof node.value === "object") node.value = resolveRelation(node.value, ctx, quantitativeValueResolver);
+		return node;
+	}
+});
+var merchantReturnPolicyResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "MerchantReturnPolicy" },
+	resolve(node, ctx) {
+		if (node.returnPolicyCategory) node.returnPolicyCategory = withBase$1(node.returnPolicyCategory, "https://schema.org/");
+		if (node.returnFees) node.returnFees = withBase$1(node.returnFees, "https://schema.org/");
+		if (node.returnMethod) node.returnMethod = withBase$1(node.returnMethod, "https://schema.org/");
+		node.returnShippingFeesAmount = resolveRelation(node.returnShippingFeesAmount, ctx, monetaryAmountResolver);
+		return node;
+	}
+});
+var unitPriceSpecificationResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "UnitPriceSpecification" },
+	resolve(node, ctx) {
+		if (node.price !== void 0) setIfEmpty(node, "priceCurrency", ctx.meta.currency);
+		if (node.priceType) node.priceType = withBase$1(node.priceType, "https://schema.org/");
+		node.referenceQuantity = resolveRelation(node.referenceQuantity, ctx, quantitativeValueResolver);
+		node.validForMemberTier = resolveRelation(node.validForMemberTier, ctx, memberProgramTierResolver);
+		node.validFrom = resolvableDateToIso(node.validFrom);
+		node.validThrough = resolvableDateToIso(node.validThrough);
+		return node;
+	}
+});
+var addressResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "PostalAddress" } });
+var listItemResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	cast(node) {
+		if (typeof node === "string") node = { name: node };
+		return node;
+	},
+	defaults: { "@type": "ListItem" },
+	resolve(node, ctx) {
+		if (typeof node.item === "string") node.item = resolveWithBase(ctx.meta.host, node.item);
+		else if (typeof node.item === "object") node.item = resolveRelation(node.item, ctx);
+		if (node.url) node.url = resolveWithBase(ctx.meta.host, node.url);
+		return node;
+	}
+});
+var PrimaryBreadcrumbId = "#breadcrumb";
+var breadcrumbResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "BreadcrumbList" },
+	idPrefix: ["url", PrimaryBreadcrumbId],
+	resolve(breadcrumb, ctx) {
+		if (breadcrumb.itemListElement) {
+			let index = 1;
+			breadcrumb.itemListElement = resolveRelation(breadcrumb.itemListElement, ctx, listItemResolver, {
+				array: true,
+				afterResolve(node) {
+					setIfEmpty(node, "position", index++);
+				}
+			});
+		}
+		return breadcrumb;
+	},
+	resolveRootNode(node, { find }) {
+		const webPage = find(PrimaryWebPageId);
+		if (webPage) setIfEmpty(webPage, "breadcrumb", idReference(node));
+	}
+});
+var clipResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "Clip" },
+	resolve(node, ctx) {
+		node.url = resolveWithBase(ctx.meta.host, node.url);
+		return node;
+	}
+});
+var broadcastEventResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "BroadcastEvent" },
+	resolve(node) {
+		node.startDate = resolvableDateToIso(node.startDate);
+		node.endDate = resolvableDateToIso(node.endDate);
+		return node;
+	}
+});
+var seekToActionResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "SeekToAction" },
+	resolve(node, ctx) {
+		node.target = resolveWithBase(ctx.meta.host, node.target);
+		return node;
+	}
+});
+var videoResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	cast(input) {
+		if (typeof input === "string") input = { url: input };
+		return input;
+	},
+	alias: "video",
+	defaults: { "@type": "VideoObject" },
+	inheritMeta: [
+		{
+			meta: "title",
+			key: "name"
+		},
+		"description",
+		"image",
+		"inLanguage",
+		{
+			meta: "datePublished",
+			key: "uploadDate"
+		}
+	],
+	idPrefix: "host",
+	resolve(video, ctx) {
+		if (video.uploadDate) video.uploadDate = resolvableDateToIso(video.uploadDate);
+		video.expires = resolvableDateToIso(video.expires);
+		if (video.url) video.url = resolveWithBase(ctx.meta.host, video.url);
+		if (video.contentUrl) video.contentUrl = resolveWithBase(ctx.meta.host, video.contentUrl);
+		if (video.embedUrl) video.embedUrl = resolveWithBase(ctx.meta.host, video.embedUrl);
+		if (video.caption && !video.description) video.description = video.caption;
+		if (!video.description) video.description = "No description";
+		if (video.thumbnailUrl && (typeof video.thumbnailUrl === "string" || Array.isArray(video.thumbnailUrl))) {
+			const images = asArray(video.thumbnailUrl).map((image) => resolveWithBase(ctx.meta.host, image));
+			video.thumbnailUrl = images.length > 1 ? images : images[0];
+		}
+		if (video.thumbnail) video.thumbnail = resolveRelation(video.thumbnail, ctx, imageResolver);
+		video.hasPart = resolveRelation(video.hasPart, ctx, clipResolver);
+		video.interactionStatistic = resolveRelation(video.interactionStatistic, ctx, interactionCounterResolver);
+		video.potentialAction = resolveRelation(video.potentialAction, ctx, seekToActionResolver);
+		video.publication = resolveRelation(video.publication, ctx, broadcastEventResolver);
+		return video;
+	},
+	resolveRootNode(video, { find, meta }) {
+		if (video.image && !video.thumbnailUrl) {
+			const firstImage = asArray(video.image)[0];
+			if (typeof firstImage === "string") setIfEmpty(video, "thumbnailUrl", resolveWithBase(meta.host, firstImage));
+			else if (firstImage?.["@id"]) setIfEmpty(video, "thumbnailUrl", find(firstImage["@id"], isImageObject)?.url);
+		}
+	}
+});
+var PrimaryArticleId = "#article";
+var searchActionResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: {
+		"@type": "SearchAction",
+		"target": { "@type": "EntryPoint" },
+		"query-input": {
+			"@type": "PropertyValueSpecification",
+			"valueRequired": true,
+			"valueName": "search_term_string"
+		}
+	},
+	resolve(node, ctx) {
+		if (typeof node.target === "string") node.target = {
+			"@type": "EntryPoint",
+			"urlTemplate": resolveWithBase(ctx.meta.host, node.target)
+		};
+		return node;
+	}
+});
+var PrimaryWebSiteId = "#website";
+var webSiteResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "WebSite" },
+	inheritMeta: ["inLanguage", {
+		meta: "host",
+		key: "url"
+	}],
+	idPrefix: ["host", PrimaryWebSiteId],
+	resolve(node, ctx) {
+		node.potentialAction = resolveRelation(node.potentialAction, ctx, searchActionResolver, { array: true });
+		node.publisher = resolveRelation(node.publisher, ctx);
+		node.dateModified = resolvableDateToIso(node.dateModified);
+		node.datePublished = resolvableDateToIso(node.datePublished);
+		return node;
+	},
+	resolveRootNode(node, { find }) {
+		if (resolveAsGraphKey(node["@id"]) === "#website") {
+			const identity = find(IdentityId);
+			if (identity) setIfEmpty(node, "publisher", idReference(identity));
+			const webPage = find(PrimaryWebPageId);
+			if (webPage) setIfEmpty(webPage, "isPartOf", idReference(node));
+		}
+		return node;
+	}
+});
+var personResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	cast(node) {
+		if (typeof node === "string") return { name: node };
+		return node;
+	},
+	defaults: { "@type": "Person" },
+	idPrefix: ["host", IdentityId],
+	resolve(node, ctx) {
+		if (node.identifier) {
+			const resolveIdentifier = (identifier) => typeof identifier === "string" ? identifier : resolveRelation(identifier, ctx, propertyValueResolver);
+			node.identifier = Array.isArray(node.identifier) ? node.identifier.map(resolveIdentifier) : resolveIdentifier(node.identifier);
+		}
+		node.agentInteractionStatistic = resolveRelation(node.agentInteractionStatistic, ctx, interactionCounterResolver);
+		node.interactionStatistic = resolveRelation(node.interactionStatistic, ctx, interactionCounterResolver);
+		if (node.url) node.url = resolveWithBase(ctx.meta.host, node.url);
+		return node;
+	},
+	resolveRootNode(node, { find, meta }) {
+		if (resolveAsGraphKey(node["@id"]) === IdentityId) {
+			setIfEmpty(node, "url", meta.host);
+			const webPage = find(PrimaryWebPageId);
+			if (webPage && isHomePage(meta)) setIfEmpty(webPage, "about", idReference(node));
+			const webSite = find(PrimaryWebSiteId);
+			if (webSite) setIfEmpty(webSite, "publisher", idReference(node));
+		}
+		const article = find(PrimaryArticleId);
+		if (article) setIfEmpty(article, "author", idReference(node));
+	}
+});
+var readActionResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "ReadAction" },
+	resolve(node, ctx) {
+		node.target ||= [];
+		if (!node.target.includes(ctx.meta.url)) node.target.unshift(ctx.meta.url);
+		return node;
+	}
+});
+var speakableSpecificationResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "SpeakableSpecification" } });
+var webPageElementResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "WebPageElement" } });
+var PrimaryWebPageId = "#webpage";
+var webPageResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults({ meta }) {
+		const endPath = withoutTrailingSlash$1(meta.url.substring(meta.url.lastIndexOf("/") + 1));
+		let type = "WebPage";
+		switch (endPath) {
+			case "about":
+			case "about-us":
+				type = "AboutPage";
+				break;
+			case "search":
+				type = "SearchResultsPage";
+				break;
+			case "checkout":
+				type = "CheckoutPage";
+				break;
+			case "contact":
+			case "get-in-touch":
+			case "contact-us":
+				type = "ContactPage";
+				break;
+			case "faq": type = "FAQPage";
+		}
+		return { "@type": type };
+	},
+	idPrefix: ["url", PrimaryWebPageId],
+	inheritMeta: [
+		{
+			meta: "title",
+			key: "name"
+		},
+		"description",
+		"datePublished",
+		"dateModified",
+		"url"
+	],
+	resolve(node, ctx) {
+		node.dateCreated = resolvableDateToIso(node.dateCreated);
+		node.dateModified = resolvableDateToIso(node.dateModified);
+		node.datePublished = resolvableDateToIso(node.datePublished);
+		resolveDefaultType(node, "WebPage");
+		node.about = resolveRelation(node.about, ctx, organizationResolver);
+		node.breadcrumb = resolveRelation(node.breadcrumb, ctx, breadcrumbResolver);
+		node.author = resolveRelation(node.author, ctx, personResolver);
+		if (node.hasPart) {
+			const resolvePart = (part) => {
+				return typeof part === "object" && part !== null && (part["@type"] === "WebPageElement" || "cssSelector" in part) ? resolveRelation(part, ctx, webPageElementResolver) : resolveRelation(part, ctx);
+			};
+			node.hasPart = Array.isArray(node.hasPart) ? node.hasPart.map(resolvePart) : resolvePart(node.hasPart);
+		}
+		node.primaryImageOfPage = resolveRelation(node.primaryImageOfPage, ctx, imageResolver);
+		node.speakable = resolveRelation(node.speakable, ctx, speakableSpecificationResolver);
+		node.video = resolveRelation(node.video, ctx, videoResolver);
+		if (Array.isArray(node["@type"]) && node["@type"].includes("ProfilePage")) node.mainEntity = resolveIdentityRelation(node.mainEntity, ctx, {
+			organization: organizationResolver,
+			person: personResolver
+		}, { root: true });
+		if (node.potentialAction) {
+			const resolveAction = (action) => {
+				if (!action || typeof action !== "object") return action;
+				const type = action["@type"];
+				return type === "ReadAction" || Array.isArray(type) && type.includes("ReadAction") || "target" in action ? resolveRelation(action, ctx, readActionResolver) : resolveRelation(action, ctx);
+			};
+			node.potentialAction = Array.isArray(node.potentialAction) ? node.potentialAction.map(resolveAction) : resolveAction(node.potentialAction);
+		}
+		if (node["@type"] === "WebPage" && ctx.meta.url) setIfEmpty(node, "potentialAction", [{
+			"@type": "ReadAction",
+			"target": [ctx.meta.url]
+		}]);
+		return node;
+	},
+	resolveRootNode(webPage, { find, meta }) {
+		const identity = find(IdentityId);
+		const webSite = find(PrimaryWebSiteId);
+		const logo = find("#logo");
+		if (identity && isHomePage(meta)) setIfEmpty(webPage, "about", idReference(identity));
+		if (logo) setIfEmpty(webPage, "primaryImageOfPage", idReference(logo));
+		if (webSite) setIfEmpty(webPage, "isPartOf", idReference(webSite));
+		const breadcrumb = find(PrimaryBreadcrumbId);
+		if (breadcrumb) setIfEmpty(webPage, "breadcrumb", idReference(breadcrumb));
+		return webPage;
+	}
+});
+var contactPointResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "ContactPoint" } });
+var creditCardResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "CreditCard" } });
+var memberProgramTierResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "MemberProgramTier" },
+	resolve(node, ctx) {
+		node.hasTierBenefit = Array.isArray(node.hasTierBenefit) ? node.hasTierBenefit.map((benefit) => withBase$1(benefit, "https://schema.org/")) : withBase$1(node.hasTierBenefit, "https://schema.org/");
+		if (node.hasTierRequirement) {
+			const requirement = node.hasTierRequirement;
+			if (typeof requirement === "object") {
+				const types = asArray(requirement["@type"]);
+				if (types.includes("CreditCard")) node.hasTierRequirement = resolveRelation(requirement, ctx, creditCardResolver);
+				else if (types.includes("MonetaryAmount") || "currency" in requirement) node.hasTierRequirement = resolveRelation(requirement, ctx, monetaryAmountResolver);
+				else node.hasTierRequirement = resolveRelation(requirement, ctx, unitPriceSpecificationResolver);
+			}
+		}
+		node.isTierOf = resolveRelation(node.isTierOf, ctx, memberProgramResolver);
+		node.membershipPointsEarned = resolveRelation(node.membershipPointsEarned, ctx, quantitativeValueResolver);
+		if (node.url) node.url = resolveWithBase(ctx.meta.host, node.url);
+		return node;
+	}
+});
+var memberProgramResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "MemberProgram" },
+	resolve(node, ctx) {
+		node.hasTiers = resolveRelation(node.hasTiers, ctx, memberProgramTierResolver);
+		if (node.url) node.url = resolveWithBase(ctx.meta.host, node.url);
+		return node;
+	}
+});
+var servicePeriodResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "ServicePeriod" },
+	resolve(node, ctx) {
+		node.duration = resolveRelation(node.duration, ctx, quantitativeValueResolver);
+		return node;
+	}
+});
+var shippingRateSettingsResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "ShippingRateSettings" } });
+var shippingSeasonalOverrideResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "OpeningHoursSpecification" },
+	resolve(node) {
+		node.validFrom = resolvableDateToIso(node.validFrom);
+		node.validThrough = resolvableDateToIso(node.validThrough);
+		return node;
+	}
+});
+var shippingConditionsResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "ShippingConditions" },
+	resolve(node, ctx) {
+		node.numItems = resolveRelation(node.numItems, ctx, quantitativeValueResolver);
+		node.orderValue = resolveRelation(node.orderValue, ctx, monetaryAmountResolver);
+		node.seasonalOverride = resolveRelation(node.seasonalOverride, ctx, shippingSeasonalOverrideResolver);
+		node.shippingDestination = resolveRelation(node.shippingDestination, ctx, definedRegionResolver);
+		node.shippingOrigin = resolveRelation(node.shippingOrigin, ctx, definedRegionResolver);
+		if (node.shippingRate) node.shippingRate = typeof node.shippingRate === "object" && ("orderPercentage" in node.shippingRate || "weightPercentage" in node.shippingRate) ? resolveRelation(node.shippingRate, ctx, shippingRateSettingsResolver) : resolveRelation(node.shippingRate, ctx, monetaryAmountResolver);
+		node.transitTime = resolveRelation(node.transitTime, ctx, servicePeriodResolver);
+		node.weight = resolveRelation(node.weight, ctx, quantitativeValueResolver);
+		return node;
+	}
+});
+var shippingServiceResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "ShippingService" },
+	resolve(node, ctx) {
+		if (node.fulfillmentType) node.fulfillmentType = withBase$1(node.fulfillmentType, "https://schema.org/");
+		node.handlingTime = resolveRelation(node.handlingTime, ctx, servicePeriodResolver);
+		node.shippingConditions = resolveRelation(node.shippingConditions, ctx, shippingConditionsResolver);
+		node.validForMemberTier = resolveRelation(node.validForMemberTier, ctx, memberProgramTierResolver);
+		return node;
+	}
+});
+var organizationResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	cast(node) {
+		if (typeof node === "string") return { name: node };
+		return node;
+	},
+	defaults: { "@type": "Organization" },
+	idPrefix: ["host", IdentityId],
+	inheritMeta: [{
+		meta: "host",
+		key: "url"
+	}],
+	resolve(node, ctx) {
+		resolveDefaultType(node, "Organization");
+		node.address = resolveRelation(node.address, ctx, addressResolver);
+		node.agentInteractionStatistic = resolveRelation(node.agentInteractionStatistic, ctx, interactionCounterResolver);
+		node.contactPoint = resolveRelation(node.contactPoint, ctx, contactPointResolver);
+		node.hasMemberProgram = resolveRelation(node.hasMemberProgram, ctx, memberProgramResolver);
+		node.hasMerchantReturnPolicy = resolveRelation(node.hasMerchantReturnPolicy, ctx, merchantReturnPolicyResolver);
+		node.hasShippingService = resolveRelation(node.hasShippingService, ctx, shippingServiceResolver);
+		if (node.identifier) {
+			const resolveIdentifier = (identifier) => typeof identifier === "string" ? identifier : resolveRelation(identifier, ctx, propertyValueResolver);
+			node.identifier = Array.isArray(node.identifier) ? node.identifier.map(resolveIdentifier) : resolveIdentifier(node.identifier);
+		}
+		node.interactionStatistic = resolveRelation(node.interactionStatistic, ctx, interactionCounterResolver);
+		node.numberOfEmployees = resolveRelation(node.numberOfEmployees, ctx, quantitativeValueResolver);
+		if (node.url) node.url = resolveWithBase(ctx.meta.host, node.url);
+		return node;
+	},
+	resolveRootNode(node, ctx) {
+		const isIdentity = resolveAsGraphKey(node["@id"]) === IdentityId;
+		const webPage = ctx.find(PrimaryWebPageId);
+		if (node.logo && isIdentity) {
+			const logoNode = resolveRelation(Array.isArray(node.logo) ? node.logo[0] : node.logo, ctx, imageResolver, {
+				root: true,
+				afterResolve(logo) {
+					logo["@id"] = prefixId(ctx.meta.host, "#logo");
+					setIfEmpty(logo, "caption", node.name);
+				}
+			});
+			if (webPage && logoNode) setIfEmpty(webPage, "primaryImageOfPage", idReference(logoNode));
+			if (node["@type"] === "Organization") node.logo = logoNode;
+			else if (!ctx.find("#organization")) {
+				const resolvedLogo = logoNode && typeof logoNode === "object" && logoNode["@id"] ? ctx.find(logoNode["@id"], isImageObject) : null;
+				ctx.nodes.push({
+					"@type": "Organization",
+					"name": node.name,
+					"url": node.url,
+					"sameAs": node.sameAs,
+					"address": node.address,
+					"logo": resolvedLogo?.url,
+					"_priority": -1,
+					"@id": prefixId(ctx.meta.host, "#organization")
+				});
+			}
+			if (node["@type"] !== "Organization") delete node.logo;
+		}
+		if (isIdentity && webPage && isHomePage(ctx.meta)) setIfEmpty(webPage, "about", idReference(node));
+		const webSite = ctx.find(PrimaryWebSiteId);
+		if (webSite) setIfEmpty(webSite, "publisher", idReference(node));
+	}
+});
+function isImageObject(node) {
+	return typeof node.url === "string" || typeof node.contentUrl === "string";
+}
+var imageResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	alias: "image",
+	cast(input) {
+		if (typeof input === "string") input = { url: input };
+		return input;
+	},
+	defaults: { "@type": "ImageObject" },
+	inheritMeta: ["inLanguage"],
+	idPrefix: "host",
+	resolve(image, ctx) {
+		const { meta } = ctx;
+		if (image.url) image.url = resolveWithBase(meta.host, image.url);
+		if (image.contentUrl) image.contentUrl = resolveWithBase(meta.host, image.contentUrl);
+		setIfEmpty(image, "contentUrl", image.url);
+		setIfEmpty(image, "url", image.contentUrl);
+		image.creator = resolveIdentityRelation(image.creator, ctx, {
+			organization: organizationResolver,
+			person: personResolver
+		}, { root: true });
+		if (image.license) image.license = resolveWithBase(meta.host, image.license);
+		if (image.acquireLicensePage) image.acquireLicensePage = resolveWithBase(meta.host, image.acquireLicensePage);
+		if (image.height && !image.width) delete image.height;
+		if (image.width && !image.height) delete image.width;
+		return image;
+	}
+});
+var ALIAS_RE = /([a-z])([A-Z])/g;
+function nextNodeId(ctx, alias) {
+	ctx.nodeIdCounters[alias] = (ctx.nodeIdCounters[alias] || 0) + 1;
+	return ctx.nodeIdCounters[alias].toString();
+}
+function resolveMeta(meta) {
+	if (!meta.path) meta.path = "/";
+	if (!meta.host && false);
+	if (meta.path !== "/") {
+		if (meta.trailingSlash && !meta.path.endsWith("/")) meta.path = withTrailingSlash$1(meta.path);
+		else if (!meta.trailingSlash && meta.path.endsWith("/")) meta.path = withoutTrailingSlash$1(meta.path);
+	}
+	meta.url = joinURL$1(meta.host || "", meta.path);
+	return meta;
+}
+function resolveNode(node, ctx, resolver) {
+	if (resolver?.cast) node = resolver.cast(node, ctx);
+	if (resolver?.defaults) {
+		let defaults = resolver.defaults;
+		if (typeof defaults === "function") defaults = defaults(ctx);
+		node = {
+			...defaults,
+			...node
+		};
+	}
+	const inheritMeta = resolver?.inheritMeta;
+	if (inheritMeta) for (let i = 0; i < inheritMeta.length; i++) {
+		const entry = inheritMeta[i];
+		if (typeof entry === "string") setIfEmpty(node, entry, ctx.meta[entry]);
+		else setIfEmpty(node, entry.key, ctx.meta[entry.meta]);
+	}
+	if (resolver?.resolve) node = resolver.resolve(node, ctx);
+	for (const k in node) {
+		const v = node[k];
+		if (Array.isArray(v)) for (let i = 0; i < v.length; i++) {
+			const item = v[i];
+			if (typeof item === "object" && item?._resolver) node[k][i] = resolveRelation(item, ctx, item._resolver);
+		}
+		else if (typeof v === "object" && v?._resolver) node[k] = resolveRelation(v, ctx, v._resolver);
+	}
+	stripEmptyProperties(node);
+	return node;
+}
+function resolveNodeId(node, ctx, resolver, resolveAsRoot = false) {
+	if (node["@id"] && node["@id"].startsWith("http")) return node;
+	const prefix = resolver ? (Array.isArray(resolver.idPrefix) ? resolver.idPrefix[0] : resolver.idPrefix) || "url" : "url";
+	const rootId = node["@id"] || (resolver ? Array.isArray(resolver.idPrefix) ? resolver.idPrefix?.[1] : void 0 : "");
+	if (!node["@id"] && resolveAsRoot && rootId) {
+		node["@id"] = prefixId(ctx.meta[prefix], rootId);
+		return node;
+	}
+	if (node["@id"]?.startsWith("#/schema/") || node["@id"]?.startsWith("/")) {
+		node["@id"] = prefixId(ctx.meta[prefix], node["@id"]);
+		return node;
+	}
+	let alias = resolver?.alias;
+	if (!alias) alias = (asArray(node["@type"])?.[0] || "").replace(ALIAS_RE, "$1-$2").toLowerCase();
+	node["@id"] = prefixId(ctx.meta[prefix], `#/schema/${alias}/${node["@id"] || nextNodeId(ctx, alias)}`);
+	return node;
+}
+function resolveRelation(input, ctx, fallbackResolver, options = {}) {
+	if (!input) return input;
+	const items = asArray(input);
+	const ids = [];
+	for (let i = 0; i < items.length; i++) {
+		const a = items[i];
+		if (!a) {
+			ids.push(a);
+			continue;
+		}
+		let keyCount = 0;
+		for (const _ in a) keyCount++;
+		if (keyCount === 1 && a["@id"] || keyCount === 2 && a["@id"] && a["@type"]) {
+			ids.push(resolveNodeId({ "@id": ctx.find(a["@id"])?.["@id"] || a["@id"] }, ctx));
+			continue;
+		}
+		let resolver = fallbackResolver;
+		if (a._resolver && typeof a._resolver !== "string") {
+			resolver = a._resolver;
+			delete a._resolver;
+		}
+		if (!resolver) {
+			ids.push(a);
+			continue;
+		}
+		let node = resolveNode(a, ctx, resolver);
+		if (options.afterResolve) options.afterResolve(node);
+		if (options.generateId || options.root) node = resolveNodeId(node, ctx, resolver, false);
+		if (options.root) {
+			if (resolver.resolveRootNode) resolver.resolveRootNode(node, ctx);
+			ctx.push(node);
+			ids.push(idReference(node["@id"]));
+			continue;
+		}
+		ids.push(node);
+	}
+	return !options.array && ids.length === 1 ? ids[0] : ids;
+}
+function merge(target, source) {
+	if (!source) return target;
+	for (const key in source) {
+		if (!hasOwn(source, key) || key === "__proto__" || key === "constructor" || key === "prototype") continue;
+		const value = source[key];
+		if (value === void 0) continue;
+		if (Array.isArray(target[key])) {
+			if (Array.isArray(value)) {
+				const merged = [...target[key], ...value];
+				if (key === "@type") target[key] = [...new Set(merged)];
+				else if (key === "itemListElement") {
+					merged.sort((a, b) => (a.position || 0) - (b.position || 0));
+					for (let i = 0; i < merged.length; i++) merged[i].position = i + 1;
+					target[key] = merged;
+				} else if (key === "potentialAction") {
+					const byType = /* @__PURE__ */ Object.create(null);
+					for (const action of merged) {
+						const type = action["@type"];
+						if (byType[type]) {
+							if (action.target && byType[type].target) {
+								const a = Array.isArray(byType[type].target) ? byType[type].target : [byType[type].target];
+								const b = Array.isArray(action.target) ? action.target : [action.target];
+								byType[type].target = [.../* @__PURE__ */ new Set([...a, ...b])];
+							}
+						} else byType[type] = { ...action };
+					}
+					target[key] = Object.values(byType);
+				} else if (merged.length > 0 && merged.every((item) => item && typeof item === "object" && item["@type"])) {
+					const byType = /* @__PURE__ */ Object.create(null);
+					for (const item of merged) byType[item["@type"]] = item;
+					target[key] = Object.values(byType);
+				} else target[key] = merged;
+			} else target[key] = merge(target[key], [value]);
+		} else if (target[key] && typeof target[key] === "object" && typeof value === "object" && !Array.isArray(value)) target[key] = merge({ ...target[key] }, value);
+		else target[key] = value;
+	}
+	return target;
+}
+var DOMAIN_RE = /(?:https?:)?\/\//;
+function indexNode(index, node) {
+	if (!node["@id"]) return;
+	const nodeId = node["@id"];
+	const fragmentKey = resolveAsGraphKey(nodeId);
+	index.set(fragmentKey, node);
+	index.set(nodeId, node);
+	const domainKey = nodeId.replace(DOMAIN_RE, "").split("/")[0];
+	index.set(domainKey, node);
+}
+function createSchemaOrgGraph() {
+	let ctx;
+	function find(id, guard) {
+		const matchFragment = id[0] === "#";
+		const matchDomain = id[0] === "/" && id[1] === "/";
+		const key = matchFragment ? resolveAsGraphKey(id) : matchDomain ? id.replace(DOMAIN_RE, "").split("/")[0] : id;
+		let node = ctx.nodeIndex.size > 0 ? ctx.nodeIndex.get(key) : void 0;
+		if (!node) for (let i = 0; i < ctx.nodes.length; i++) {
+			const candidate = ctx.nodes[i];
+			const nodeId = candidate["@id"];
+			if (!nodeId) continue;
+			if ((matchFragment ? resolveAsGraphKey(nodeId) : matchDomain ? nodeId.replace(DOMAIN_RE, "").split("/")[0] : nodeId) === key) {
+				node = candidate;
+				break;
+			}
+		}
+		if (!node || guard && !guard(node)) return null;
+		return node;
+	}
+	ctx = {
+		find,
+		push(input) {
+			if (Array.isArray(input)) for (let i = 0; i < input.length; i++) {
+				const registeredNode = input[i];
+				ctx.nodes.push(registeredNode);
+				if (ctx.nodeIndex.size > 0) indexNode(ctx.nodeIndex, registeredNode);
+			}
+			else {
+				const registeredNode = input;
+				ctx.nodes.push(registeredNode);
+				if (ctx.nodeIndex.size > 0) indexNode(ctx.nodeIndex, registeredNode);
+			}
+		},
+		resolveGraph(meta) {
+			for (const k in ctx.nodeIdCounters) delete ctx.nodeIdCounters[k];
+			ctx.meta = resolveMeta({ ...meta });
+			const len = ctx.nodes.length;
+			for (let i = 0; i < len; i++) {
+				let node = ctx.nodes[i];
+				const resolver = node._resolver;
+				node = resolveNode(node, ctx, resolver);
+				node = resolveNodeId(node, ctx, resolver, true);
+				ctx.nodes[i] = node;
+			}
+			const dedupedNodes = /* @__PURE__ */ Object.create(null);
+			let hasDuplicates = false;
+			ctx.nodeIndex.clear();
+			for (let i = 0; i < ctx.nodes.length; i++) {
+				const n = ctx.nodes[i];
+				const nodeKey = resolveAsGraphKey(n["@id"]);
+				if (dedupedNodes[nodeKey]) {
+					hasDuplicates = true;
+					if (n._dedupeStrategy !== "replace") dedupedNodes[nodeKey] = merge(dedupedNodes[nodeKey], n);
+					else dedupedNodes[nodeKey] = n;
+				} else dedupedNodes[nodeKey] = n;
+			}
+			if (hasDuplicates) ctx.nodes = Object.values(dedupedNodes);
+			for (let i = 0; i < ctx.nodes.length; i++) indexNode(ctx.nodeIndex, ctx.nodes[i]);
+			const countBeforeRelations = ctx.nodes.length;
+			for (let i = 0; i < ctx.nodes.length; i++) {
+				const node = ctx.nodes[i];
+				if (node.image && typeof node.image === "string") node.image = resolveRelation(node.image, ctx, imageResolver, { root: true });
+				node.translationOfWork = resolveRelation(node.translationOfWork, ctx);
+				node.workTranslation = resolveRelation(node.workTranslation, ctx);
+				const resolver = node._resolver;
+				if (resolver?.resolveRootNode) resolver.resolveRootNode(node, ctx);
+			}
+			for (let i = 0; i < ctx.nodes.length; i++) delete ctx.nodes[i]._resolver;
+			for (let i = 0; i < ctx.nodes.length; i++) stripNullProperties(ctx.nodes[i]);
+			const needsDedupe = ctx.nodes.length > countBeforeRelations;
+			const normalizedNodes = needsDedupe ? /* @__PURE__ */ Object.create(null) : null;
+			const result = needsDedupe ? null : [];
+			for (let i = 0; i < ctx.nodes.length; i++) {
+				const n = ctx.nodes[i];
+				const nodeKey = resolveAsGraphKey(n["@id"]);
+				const keys = Object.keys(n);
+				keys.sort();
+				const newNode = {};
+				let relationCount = 0;
+				for (let j = 0; j < keys.length; j++) {
+					const k = keys[j];
+					if (k[0] === "_") continue;
+					const v = n[k];
+					if (v !== null && (Array.isArray(v) || typeof v === "object")) keys[relationCount++] = k;
+					else newNode[k] = v;
+				}
+				for (let j = 0; j < relationCount; j++) {
+					const k = keys[j];
+					newNode[k] = n[k];
+				}
+				if (needsDedupe) normalizedNodes[nodeKey] = normalizedNodes[nodeKey] ? merge(normalizedNodes[nodeKey], newNode) : newNode;
+				else result.push(newNode);
+			}
+			return needsDedupe ? Object.values(normalizedNodes) : result;
+		},
+		nodes: [],
+		nodeIndex: /* @__PURE__ */ new Map(),
+		nodeIdCounters: /* @__PURE__ */ Object.create(null),
+		meta: resolveMeta({})
+	};
+	return ctx;
+}
+function resolveIdentityRelation(input, ctx, resolvers, options = {}) {
+	if (!input) return input;
+	const resolveIdentity = (identity) => {
+		const types = typeof identity === "object" && identity ? asArray(identity["@type"]).filter((type) => typeof type === "string") : [];
+		return resolveRelation(identity, ctx, types.length > 0 && !types.includes("Person") ? resolvers.organization : resolvers.person, options);
+	};
+	if (!Array.isArray(input)) return resolveIdentity(input);
+	const resolved = input.map(resolveIdentity);
+	return resolved.length === 1 ? resolved[0] : resolved;
+}
+var aggregateRatingResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "AggregateRating" },
+	resolve(node, ctx) {
+		node.itemReviewed = resolveRelation(node.itemReviewed, ctx);
+		return node;
+	}
+});
+var openingHoursResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: {
+		"@type": "OpeningHoursSpecification",
+		"opens": "00:00",
+		"closes": "23:59"
+	},
+	resolve(node) {
+		node.validFrom = resolvableDateToIso(node.validFrom);
+		node.validThrough = resolvableDateToIso(node.validThrough);
+		return node;
+	}
+});
+var itemListResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "ItemList" },
+	resolve(node, ctx) {
+		if (node.itemListElement) {
+			let index = 1;
+			node.itemListElement = resolveRelation(node.itemListElement, ctx, listItemResolver, {
+				array: true,
+				afterResolve(node2) {
+					setIfEmpty(node2, "position", index++);
+				}
+			});
+		}
+		return node;
+	}
+});
+var ratingResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	cast(node) {
+		if (typeof node === "number") return { ratingValue: node };
+		return node;
+	},
+	defaults: {
+		"@type": "Rating",
+		"bestRating": 5,
+		"worstRating": 1
+	}
+});
+var reviewResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": "Review" },
+	inheritMeta: ["inLanguage"],
+	resolve(review, ctx) {
+		review.reviewRating = resolveRelation(review.reviewRating, ctx, ratingResolver);
+		review.author = resolveIdentityRelation(review.author, ctx, {
+			organization: organizationResolver,
+			person: personResolver
+		});
+		review.itemReviewed = resolveRelation(review.itemReviewed, ctx);
+		review.negativeNotes = resolveRelation(review.negativeNotes, ctx, itemListResolver);
+		review.positiveNotes = resolveRelation(review.positiveNotes, ctx, itemListResolver);
+		review.contentReferenceTime = resolvableDateToIso(review.contentReferenceTime);
+		review.datePublished = resolvableDateToIso(review.datePublished);
+		return review;
+	}
+});
+var geoCoordinatesResolver = /* @__PURE__ */ defineSchemaOrgResolver({ defaults: { "@type": "GeoCoordinates" } });
+var localBusinessResolver = /* @__PURE__ */ defineSchemaOrgResolver({
+	defaults: { "@type": ["Organization", "LocalBusiness"] },
+	inheritMeta: [{
+		key: "url",
+		meta: "host"
+	}, {
+		key: "currenciesAccepted",
+		meta: "currency"
+	}],
+	idPrefix: ["host", IdentityId],
+	resolve(node, ctx) {
+		resolveDefaultType(node, ["Organization", "LocalBusiness"]);
+		node.address = resolveRelation(node.address, ctx, addressResolver);
+		node.aggregateRating = resolveRelation(node.aggregateRating, ctx, aggregateRatingResolver);
+		node.department = resolveRelation(node.department, ctx, localBusinessResolver);
+		node.geo = resolveRelation(node.geo, ctx, geoCoordinatesResolver);
+		node.openingHoursSpecification = resolveRelation(node.openingHoursSpecification, ctx, openingHoursResolver);
+		node.review = resolveRelation(node.review, ctx, reviewResolver);
+		if (node.menu) node.menu = resolveWithBase(ctx.meta.host, node.menu);
+		node = resolveNode({ ...node }, ctx, organizationResolver);
+		return node;
+	},
+	resolveRootNode(node, ctx) {
+		organizationResolver.resolveRootNode(node, ctx);
+		return node;
+	}
+});
+function mergeObjects(target, source) {
+	const result = { ...target };
+	for (const key in source) {
+		if (!hasOwn(source, key) || source[key] === void 0 || key === "__proto__" || key === "constructor" || key === "prototype") continue;
+		if (result[key] && typeof result[key] === "object" && typeof source[key] === "object" && !Array.isArray(result[key]) && !Array.isArray(source[key])) result[key] = mergeObjects(result[key], source[key]);
+		else if (!result[key]) result[key] = source[key];
+	}
+	return result;
+}
+function isSchemaOrgTag(tag) {
+	return tag.tag === "script" && tag.props.type === "application/ld+json" && tag.props.nodes || tag.key === "schema-org-graph";
+}
+function UnheadSchemaOrg(config = {}, meta = () => ({}), options) {
+	config = resolveMeta({ ...config });
+	let graph;
+	let resolvedMeta = {};
+	return defineHeadPlugin((head) => {
+		head.use(TemplateParamsPlugin);
+		function collectTag(tag) {
+			if (tag.tag === "script" && tag.props.type === "application/ld+json" && tag.props.nodes) {
+				const nodes = tag.props.nodes;
+				for (const node of Array.isArray(nodes) ? nodes : [nodes]) {
+					if (typeof node !== "object" || node === null) continue;
+					const newNode = {
+						...node,
+						_dedupeStrategy: tag.tagDuplicateStrategy
+					};
+					graph.push(newNode);
+				}
+				tag.tagPosition = tag.tagPosition || (config.tagPosition === "head" ? "head" : "bodyClose");
+			}
+			if (tag.tag === "htmlAttrs" && typeof tag.props.lang === "string") resolvedMeta.inLanguage = tag.props.lang;
+			else if (tag.tag === "title" && tag.textContent != null && typeof tag.textContent !== "function") resolvedMeta.title = String(tag.textContent);
+			else if (tag.tag === "meta" && tag.props.name === "description" && typeof tag.props.content === "string") resolvedMeta.description = tag.props.content;
+			else if (tag.tag === "link" && tag.props.rel === "canonical" && typeof tag.props.href === "string") {
+				resolvedMeta.url = tag.props.href;
+				if (resolvedMeta.url && !resolvedMeta.host) try {
+					resolvedMeta.host = new URL(resolvedMeta.url).origin;
+				} catch {}
+			} else if (tag.tag === "meta" && tag.props.property === "og:image" && typeof tag.props.content === "string") resolvedMeta.image = tag.props.content;
+			else if (tag.tag === "templateParams" && tag.props.schemaOrg) resolvedMeta = {
+				...resolvedMeta,
+				...tag.props.schemaOrg
+			};
+		}
+		return {
+			key: "schema-org",
+			hooks: {
+				"entries:resolve": (ctx) => {
+					graph = graph || createSchemaOrgGraph();
+					graph.nodes = [];
+					graph.nodeIndex.clear();
+					resolvedMeta = {};
+					for (const entry of ctx.entries) if (entry._tags) {
+						if (entry._tags.some(isSchemaOrgTag)) {
+							delete entry._tags;
+							continue;
+						}
+						for (const tag of entry._tags) collectTag(tag);
+					}
+				},
+				"entries:normalize": ({ tags }) => {
+					for (const tag of tags) collectTag(tag);
+				},
+				"tags:resolve": (ctx) => {
+					for (const k in ctx.tags) {
+						const tag = ctx.tags[k];
+						if (tag.tag === "script" && tag.props.type === "application/ld+json" && tag.props.nodes) {
+							delete tag.props.nodes;
+							const resolvedGraph = graph.resolveGraph({
+								...meta?.() || {},
+								...config,
+								...resolvedMeta
+							});
+							if (!resolvedGraph.length) {
+								tag.props = {};
+								return;
+							}
+							options?.minify || true;
+							tag.innerHTML = JSON.stringify({
+								"@context": "https://schema.org",
+								"@graph": resolvedGraph
+							}, (_, value) => {
+								if (typeof value === "string") return processTemplateParams(value, head._templateParams, head._separator);
+								return value;
+							}, 0 );
+							return;
+						}
+					}
+				},
+				"tags:afterResolve": (ctx) => {
+					let firstNodeIdx;
+					let toRemove;
+					for (let i = 0; i < ctx.tags.length; i++) {
+						const tag = ctx.tags[i];
+						if (!tag?.props) continue;
+						if (isSchemaOrgTag(tag)) {
+							delete tag.props.nodes;
+							if (typeof firstNodeIdx === "undefined") {
+								firstNodeIdx = i;
+								continue;
+							}
+							ctx.tags[firstNodeIdx].props = mergeObjects(ctx.tags[firstNodeIdx].props, tag.props);
+							delete ctx.tags[firstNodeIdx].props.nodes;
+							(toRemove ||= /* @__PURE__ */ new Set()).add(i);
+						}
+					}
+					if (toRemove) ctx.tags = ctx.tags.filter((_, i) => !toRemove.has(i));
+				}
+			}
+		};
+	}, "schema-org");
+}
+//#endregion
+//#region node_modules/nuxt-schema-org/dist/vendor/schema-org-v3/vue.mjs
+function withResolver(input, resolver) {
+	return {
+		...input,
+		_resolver: resolver
+	};
+}
+function provideResolver(input, resolver) {
+	const resolvedInput = input || {};
+	if (isRef(resolvedInput)) return computed(() => {
+		const value = resolvedInput.value;
+		return value && typeof value === "object" ? withResolver(value, resolver) : value;
+	});
+	return withResolver(resolvedInput, resolver);
+}
+function defineLocalBusiness(input) {
+	return provideResolver(input, localBusinessResolver);
+}
+function defineOrganization(input) {
+	return provideResolver(input, organizationResolver);
+}
+function definePerson(input) {
+	return provideResolver(input, personResolver);
+}
+function defineWebPage(input) {
+	return provideResolver(input, webPageResolver);
+}
+function defineWebSite(input) {
+	return provideResolver(input, webSiteResolver);
+}
+//#endregion
+//#region node_modules/site-config-stack/dist/urls.mjs
+var FILE_EXT_RE = /\.[0-9a-z]+$/i;
+function resolveSitePath(pathOrUrl, options) {
+	let path = pathOrUrl;
+	if (hasProtocol(pathOrUrl, {
+		strict: false,
+		acceptRelative: true
+	})) path = parseURL(pathOrUrl).pathname;
+	const base = withLeadingSlash(options.base || "/");
+	if (base !== "/" && path.startsWith(base)) path = path.slice(base.length);
+	let origin = withoutTrailingSlash(options.absolute ? options.siteUrl : "");
+	if (base !== "/" && origin.endsWith(base)) origin = origin.slice(0, origin.indexOf(base));
+	const baseWithOrigin = options.withBase ? withBase(base, origin || "/") : origin;
+	const resolvedUrl = withBase(path, baseWithOrigin);
+	return path === "/" && !options.withBase ? withTrailingSlash(resolvedUrl) : fixSlashes(options.trailingSlash, resolvedUrl);
+}
+var fileExtensions = [
+	"jpg",
+	"jpeg",
+	"png",
+	"gif",
+	"bmp",
+	"webp",
+	"svg",
+	"ico",
+	"pdf",
+	"doc",
+	"docx",
+	"xls",
+	"xlsx",
+	"ppt",
+	"pptx",
+	"txt",
+	"md",
+	"markdown",
+	"zip",
+	"rar",
+	"7z",
+	"tar",
+	"gz",
+	"mp3",
+	"wav",
+	"flac",
+	"ogg",
+	"opus",
+	"m4a",
+	"aac",
+	"midi",
+	"mid",
+	"mp4",
+	"avi",
+	"mkv",
+	"mov",
+	"wmv",
+	"flv",
+	"webm",
+	"html",
+	"css",
+	"js",
+	"json",
+	"xml",
+	"tsx",
+	"jsx",
+	"ts",
+	"vue",
+	"svelte",
+	"xsl",
+	"rss",
+	"atom",
+	"php",
+	"py",
+	"rb",
+	"java",
+	"c",
+	"cpp",
+	"h",
+	"go",
+	"csv",
+	"tsv",
+	"sql",
+	"yaml",
+	"yml",
+	"woff",
+	"woff2",
+	"ttf",
+	"otf",
+	"eot",
+	"exe",
+	"msi",
+	"apk",
+	"ipa",
+	"dmg",
+	"iso",
+	"bin",
+	"bat",
+	"cmd",
+	"sh",
+	"env",
+	"htaccess",
+	"conf",
+	"toml",
+	"ini",
+	"deb",
+	"rpm",
+	"jar",
+	"war",
+	"epub",
+	"mobi",
+	"log",
+	"tmp",
+	"bak",
+	"old",
+	"sav"
+];
+function isPathFile(path) {
+	const ext = (path.split("/").pop() || path).match(FILE_EXT_RE)?.[0];
+	return !!(ext && fileExtensions.includes(ext.replace(".", "")));
+}
+function fixSlashes(trailingSlash, pathOrUrl) {
+	const $url = parseURL(pathOrUrl);
+	if (isPathFile($url.pathname)) return pathOrUrl;
+	const fixedPath = trailingSlash ? withTrailingSlash($url.pathname) : withoutTrailingSlash($url.pathname);
+	return `${$url.protocol ? `${$url.protocol}//` : ""}${$url.host || ""}${fixedPath}${$url.search || ""}${$url.hash || ""}`;
+}
+//#endregion
+//#region node_modules/nuxt-site-config/dist/runtime/app/composables/getNitroOrigin.js
+function getNitroOrigin(e) {
+	e = e || useRequestEvent();
+	return e?.context?.siteConfigNitroOrigin || "";
+}
+//#endregion
+//#region node_modules/nuxt-site-config/dist/runtime/app/composables/utils.js
+function createSitePathResolver(options = {}) {
+	const siteConfig = useSiteConfig();
+	const nitroOrigin = getNitroOrigin();
+	const nuxtBase = (/* @__PURE__ */ useRuntimeConfig()).app.baseURL || "/";
+	return (path) => {
+		return computed(() => resolveSitePath(unref(path), {
+			absolute: unref(options.absolute),
+			withBase: unref(options.withBase),
+			siteUrl: unref(options.canonical) !== false || false ? siteConfig.url : nitroOrigin,
+			trailingSlash: siteConfig.trailingSlash,
+			base: nuxtBase
+		}));
+	};
+}
+function withSiteUrl(path, options = {}) {
+	const siteConfig = useSiteConfig();
+	const nitroOrigin = getNitroOrigin();
+	const base = (/* @__PURE__ */ useRuntimeConfig()).app.baseURL || "/";
+	return computed(() => {
+		return resolveSitePath(unref(path), {
+			absolute: true,
+			siteUrl: unref(options.canonical) !== false || false ? siteConfig.url : nitroOrigin,
+			trailingSlash: siteConfig.trailingSlash,
+			base,
+			withBase: unref(options.withBase)
+		});
+	});
+}
+//#endregion
+//#region node_modules/nuxt-schema-org/dist/runtime/app/utils/config.js
+function useSchemaOrgConfig() {
+	return defu((/* @__PURE__ */ useRuntimeConfig())["nuxt-schema-org"], { scriptAttributes: {} });
+}
+//#endregion
+//#region node_modules/nuxt-schema-org/dist/runtime/app/composables/useSchemaOrg.js
+function useSchemaOrg(input) {
+	const config = useSchemaOrgConfig();
+	useNuxtApp();
+	let nodes = input;
+	if (isRef(input)) nodes = toValue(input);
+	return useHead$1({ script: [{
+		type: "application/ld+json",
+		key: "schema-org-graph",
+		nodes,
+		tagPriority: "high",
+		...config.scriptAttributes
+	}] });
+}
+//#endregion
+//#region node_modules/nuxt-schema-org/dist/runtime/app/utils/shared.js
+function resolvePathDirect(siteConfig, path, options) {
+	const nuxtBase = (/* @__PURE__ */ useRuntimeConfig()).app.baseURL || "/";
+	return resolveSitePath(path, {
+		absolute: options.absolute,
+		withBase: options.withBase,
+		siteUrl: toValue(siteConfig.url),
+		trailingSlash: toValue(siteConfig.trailingSlash),
+		base: nuxtBase
+	});
+}
+function initPlugin(nuxtApp) {
+	initSchemaOrgMeta();
+	initSchemaOrgHead(nuxtApp);
+}
+function initSchemaOrgMeta() {
+	const route = useRoute$2();
+	const siteConfig = useSiteConfig();
+	const resolveUrl = (path) => resolvePathDirect(siteConfig, path, {
+		absolute: true,
+		withBase: true
+	});
+	function resolveSchemaOrg() {
+		const siteConfigResolved = {};
+		for (const key in siteConfig) {
+			if (key.startsWith("_")) continue;
+			siteConfigResolved[key] = toValue(siteConfig[key]);
+			if (typeof siteConfigResolved[key] === "object") for (const k in siteConfigResolved[key]) siteConfigResolved[key][k] = toValue(siteConfigResolved[key][k]);
+		}
+		return {
+			...route.meta?.schemaOrg || {},
+			...siteConfigResolved,
+			url: toValue(resolveUrl(route.path)),
+			host: withTrailingSlash(toValue(resolveUrl("/"))),
+			inLanguage: toValue(siteConfigResolved.currentLocale) || toValue(siteConfigResolved.defaultLocale),
+			path: route.path
+		};
+	}
+	useHead$1({ templateParams: { schemaOrg: resolveSchemaOrg() } });
+}
+function initSchemaOrgHead(nuxtApp) {
+	const head = injectHead(nuxtApp);
+	const config = useSchemaOrgConfig();
+	const siteConfig = useSiteConfig();
+	const schemaOrgPlugin = UnheadSchemaOrg;
+	head.use(schemaOrgPlugin({}, async () => {
+		const meta = {};
+		await nuxtApp.hooks.callHook("schema-org:meta", meta);
+		return meta;
+	}, {
+		minify: config.minify,
+		trailingSlash: siteConfig.trailingSlash
+	}));
+}
+function maybeAddIdentitySchemaOrg() {
+	const config = useSchemaOrgConfig();
+	const siteConfig = useSiteConfig({ resolveRefs: true });
+	if (config.identity || siteConfig.identity) {
+		const identity = config.identity || siteConfig.identity;
+		let identityPayload = {
+			name: () => toValue(siteConfig.name),
+			url: () => toValue(siteConfig.url)
+		};
+		let identityType;
+		if (typeof identity !== "string") {
+			identityPayload = {
+				...identityPayload,
+				...identity
+			};
+			identityType = identity.type;
+			delete identityPayload.type;
+		} else identityType = identity;
+		if (siteConfig.twitter) {
+			const id = siteConfig.twitter.startsWith("@") ? siteConfig.twitter.slice(1) : siteConfig.twitter;
+			identityPayload.sameAs = [`https://twitter.com/${id}`];
+		}
+		useSchemaOrg([({
+			organization: defineOrganization,
+			person: definePerson,
+			localbusiness: defineLocalBusiness
+		}[identityType?.toLowerCase()] || defineOrganization)(identityPayload)]);
+	}
+}
+//#endregion
+//#region node_modules/nuxt-schema-org/dist/runtime/app/plugins/init.js
+var init_default = /* @__PURE__ */ defineNuxtPlugin({
+	name: "nuxt-schema-org:init",
+	setup(nuxtApp) {
+		initPlugin(nuxtApp);
+	}
+});
+//#endregion
+//#region node_modules/nuxt-schema-org/dist/runtime/app/plugins/defaults.js
+var defaults_default$1 = /* @__PURE__ */ defineNuxtPlugin({
+	name: "nuxt-schema-org:defaults",
+	dependsOn: ["nuxt-schema-org:init"],
+	setup() {
+		if ((/* @__PURE__ */ useError()).value?.error) return;
+		const siteConfig = useSiteConfig();
+		useSchemaOrg([defineWebSite({
+			name: () => toValue(siteConfig.name) || "",
+			inLanguage: () => toValue(siteConfig.currentLocale) || "",
+			description: () => toValue(siteConfig.description) || ""
+		}), defineWebPage()]);
+		maybeAddIdentitySchemaOrg();
+	}
+});
+//#endregion
+//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fnuxt-og-image%2Fcomponents.mjs
+var componentNames = [
+	{
+		"hash": "",
+		"pascalName": "BlogPostTakumi",
+		"kebabName": "blog-post-takumi",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "takumi",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "BrutalistSatori",
+		"kebabName": "brutalist-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "DocsTakumi",
+		"kebabName": "docs-takumi",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "takumi",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "FrameSatori",
+		"kebabName": "frame-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "NuxtSatori",
+		"kebabName": "nuxt-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "NuxtSeoSatori",
+		"kebabName": "nuxt-seo-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "NuxtSeoTakumi",
+		"kebabName": "nuxt-seo-takumi",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "takumi",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "PergelSatori",
+		"kebabName": "pergel-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "ProductCardTakumi",
+		"kebabName": "product-card-takumi",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "takumi",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "SaaSSatori",
+		"kebabName": "saa-ssatori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "SimpleBlogSatori",
+		"kebabName": "simple-blog-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "UnJsSatori",
+		"kebabName": "un-js-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	},
+	{
+		"hash": "",
+		"pascalName": "WithEmojiSatori",
+		"kebabName": "with-emoji-satori",
+		"path": "D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community",
+		"category": "community",
+		"renderer": "satori",
+		"propNames": []
+	}
+];
+//#endregion
+//#region node_modules/nuxt-og-image/dist/runtime/shared/urlEncoding.js
+var MAX_PATH_LENGTH = 200;
+var RE_BASE64_PADDING = /=/g;
+var RE_BASE64_PLUS = /\+/g;
+var RE_BASE64_SLASH = /\//g;
+var RE_UNDERSCORE = /_/g;
+var RE_PERCENT20 = /%20/g;
+var RE_NON_ASCII = /[^\u0000-\u007F]/;
+var RE_WINDOWS_RESERVED_FILENAME_CHARACTERS = /[<>:"/\\|?*\u0000-\u001F]/;
+var PARAM_TO_ALIAS = Object.fromEntries(Object.entries({
+	w: "width",
+	h: "height",
+	c: "component",
+	em: "emojis",
+	k: "key",
+	a: "alt",
+	u: "url",
+	cache: "cacheMaxAgeSeconds",
+	p: "_path",
+	q: "_query",
+	ch: "_componentHash"
+}).map(([alias, param]) => [param, alias]));
+var COMPLEX_PARAMS = /* @__PURE__ */ new Set([
+	"satori",
+	"resvg",
+	"sharp",
+	"screenshot",
+	"takumi",
+	"fonts",
+	"_query",
+	"_path"
+]);
+function b64Encode(str) {
+	let encoded;
+	if (typeof btoa === "function") {
+		const utf8 = new TextEncoder().encode(str);
+		const binary = String.fromCharCode(...utf8);
+		encoded = btoa(binary);
+	} else encoded = Buffer.from(str, "utf8").toString("base64");
+	return encoded.replace(RE_BASE64_PADDING, "").replace(RE_BASE64_PLUS, "-").replace(RE_BASE64_SLASH, "~");
+}
+function simpleHash(str) {
+	let hash = 0;
+	for (let i = 0; i < str.length; i++) {
+		const char = str.charCodeAt(i);
+		hash = (hash << 5) - hash + char;
+		hash = hash & hash;
+	}
+	return Math.abs(hash).toString(36);
+}
+function hashOgImageOptions(options, componentHash, version) {
+	const { _path, _hash, ...hashableOptions } = options;
+	return simpleHash(JSON.stringify(hashableOptions));
+}
+function encodeOgImageParams(options, defaults) {
+	const parts = [];
+	const flattened = {};
+	for (const [key, value] of Object.entries(options)) if (key === "props" && typeof value === "object") for (const [propKey, propValue] of Object.entries(value)) {
+		if (propValue === void 0 || propValue === null) continue;
+		if (typeof propValue === "string" || typeof propValue === "number" || typeof propValue === "boolean") flattened[propKey] = propValue;
+		else {
+			flattened.props = flattened.props || {};
+			flattened.props[propKey] = propValue;
+		}
+	}
+	else flattened[key] = value;
+	for (const [key, value] of Object.entries(flattened)) {
+		if (value === void 0 || value === null || value === "") continue;
+		if (key === "extension" || key === "socialPreview") continue;
+		if (key === "_path" && value === "/") continue;
+		if (key === "_query" && typeof value === "object" && Object.keys(value).length === 0) continue;
+		if (defaults && key in defaults && defaults[key] === value && key !== "component") continue;
+		const alias = PARAM_TO_ALIAS[key] || key;
+		if (COMPLEX_PARAMS.has(key)) {
+			const json = JSON.stringify(value);
+			if (json === "{}") continue;
+			const b64 = b64Encode(json);
+			parts.push(`${alias}_${b64}`);
+		} else if (typeof value === "object") {
+			const json = JSON.stringify(value);
+			if (json === "{}") continue;
+			const b64 = b64Encode(json);
+			parts.push(`${alias}_${b64}`);
+		} else {
+			const str = String(value);
+			if (RE_NON_ASCII.test(str)) parts.push(`${alias}_~${b64Encode(str)}`);
+			else {
+				const escaped = str.startsWith("~") ? `~${str}` : str;
+				const encoded = encodeURIComponent(escaped.replace(RE_UNDERSCORE, "__")).replace(RE_PERCENT20, "+");
+				if (encoded.includes("%") || RE_WINDOWS_RESERVED_FILENAME_CHARACTERS.test(str)) parts.push(`${alias}_~${b64Encode(str)}`);
+				else parts.push(`${alias}_${encoded}`);
+			}
+		}
+	}
+	return parts.join(",");
+}
+function buildOgImageUrl(options, extension = "png", isStatic = false, defaults, secret) {
+	const encoded = encodeOgImageParams(options, defaults);
+	const prefix = isStatic ? "/_og/s" : "/_og/d";
+	if (isStatic && (encoded.length > MAX_PATH_LENGTH || encoded.includes("%"))) {
+		const hash = hashOgImageOptions(options);
+		return {
+			url: `${prefix}/o_${hash}.${extension}`,
+			hash
+		};
+	}
+	const segment = encoded || "default";
+	return { url: `${prefix}/${secret && !isStatic ? `${segment},s_${signEncodedParams(segment, secret)}` : segment}.${extension}` };
+}
+function signEncodedParams(encoded, secret) {
+	return digest(`${secret}:${encoded}`).slice(0, 16);
+}
+//#endregion
+//#region node_modules/nuxt-og-image/dist/runtime/shared.js
+var RE_KEBAB_CASE = /-([a-z])/g;
+function generateMeta(url, resolvedOptions) {
+	const key = resolvedOptions.key || "og";
+	const isTwitterOnly = key === "twitter";
+	const includeTwitter = key === "og" || key === "twitter";
+	const meta = [];
+	if (includeTwitter) {
+		meta.push({
+			name: "twitter:card",
+			content: "summary_large_image"
+		});
+		meta.push({
+			name: "twitter:image",
+			content: url
+		});
+		meta.push({
+			name: "twitter:image:src",
+			content: url
+		});
+	}
+	if (!isTwitterOnly) {
+		meta.push({
+			property: "og:image",
+			content: url
+		});
+		meta.push({
+			property: "og:image:type",
+			content: () => `image/${getExtension(toValue(url)) || resolvedOptions.extension}`
+		});
+	}
+	if (resolvedOptions.width) {
+		if (!isTwitterOnly) meta.push({
+			property: "og:image:width",
+			content: resolvedOptions.width
+		});
+		if (includeTwitter) meta.push({
+			name: "twitter:image:width",
+			content: resolvedOptions.width
+		});
+	}
+	if (resolvedOptions.height) {
+		if (!isTwitterOnly) meta.push({
+			property: "og:image:height",
+			content: resolvedOptions.height
+		});
+		if (includeTwitter) meta.push({
+			name: "twitter:image:height",
+			content: resolvedOptions.height
+		});
+	}
+	if (resolvedOptions.alt) {
+		if (!isTwitterOnly) meta.push({
+			property: "og:image:alt",
+			content: resolvedOptions.alt
+		});
+		if (includeTwitter) meta.push({
+			name: "twitter:image:alt",
+			content: resolvedOptions.alt
+		});
+	}
+	return meta;
+}
+function isInternalRoute(path) {
+	return path.startsWith("/_") || path.startsWith("@");
+}
+function filterIsOgImageOption(key) {
+	return [
+		"url",
+		"extension",
+		"width",
+		"height",
+		"alt",
+		"props",
+		"renderer",
+		"component",
+		"emojis",
+		"_query",
+		"_hash",
+		"fonts",
+		"satori",
+		"resvg",
+		"sharp",
+		"screenshot",
+		"takumi",
+		"cacheMaxAgeSeconds",
+		"cacheKey",
+		"key"
+	].includes(key);
+}
+function separateProps(options, ignoreKeys = []) {
+	options = options || {};
+	const _props = defu(options.props, Object.fromEntries(Object.entries({ ...options }).filter(([k]) => !filterIsOgImageOption(k) && !ignoreKeys.includes(k))));
+	const props = {};
+	Object.entries(_props).forEach(([key, val]) => {
+		props[key.replace(RE_KEBAB_CASE, (g) => String(g[1]).toUpperCase())] = val;
+	});
+	const result = Object.fromEntries(Object.entries({ ...options }).filter(([k]) => filterIsOgImageOption(k) || ignoreKeys.includes(k)));
+	if (Object.keys(props).length > 0) result.props = props;
+	return result;
+}
+function withoutQuery(path) {
+	return path.split("?")[0];
+}
+function getExtension(path) {
+	path = withoutQuery(path);
+	const lastSegment = path.split("/").pop() || path;
+	const extension = lastSegment.split(".").pop() || lastSegment;
+	if (extension === "jpg") return "jpeg";
+	return extension;
+}
+var RE_RENDERER_SUFFIX = /(Satori|Browser|Takumi)$/;
+function createOgImageMeta(src, input, ssrContext, pagePath, head) {
+	const ogImageConfig = useOgImageRuntimeConfig();
+	const { defaults } = ogImageConfig;
+	const resolvedOptions = separateProps(defu(input, defaults));
+	resolvedOptions.key = resolvedOptions.key || "og";
+	const payloads = ssrContext._ogImagePayloads || [];
+	const currentPayloadIdx = payloads.findIndex(([k]) => k === resolvedOptions.key);
+	const _input = separateProps(defu(input, currentPayloadIdx >= 0 ? payloads[currentPayloadIdx][1] : {}));
+	if (!src && !input.url && !resolvedOptions.url) return;
+	const basePath = "/";
+	if (currentPayloadIdx === -1) payloads.push([
+		resolvedOptions.key,
+		_input,
+		basePath
+	]);
+	else payloads[currentPayloadIdx] = [
+		resolvedOptions.key,
+		_input,
+		basePath
+	];
+	const baseURL = (/* @__PURE__ */ useRuntimeConfig()).app.baseURL;
+	ssrContext._ogImageInstance?.dispose();
+	ssrContext._ogImageInstance = useHead$1({ meta() {
+		const finalPayload = ssrContext._ogImagePayloads || [];
+		return finalPayload.flatMap(([_, options, payloadBasePath]) => {
+			const opts = {
+				...options,
+				props: { ...options.props }
+			};
+			const rawComponentName = opts.component || componentNames?.[0]?.pascalName;
+			const resolvedComponentName = rawComponentName ? resolveComponentName(rawComponentName) : void 0;
+			(resolvedComponentName ? componentNames?.find((c) => c.pascalName === resolvedComponentName || c.kebabName === resolvedComponentName) : void 0)?.propNames;
+			const extension = opts.extension || defaults?.extension || "png";
+			const isStatic = false;
+			const urlOpts = {
+				...opts,
+				_path: payloadBasePath
+			};
+			const componentName = opts.component || componentNames?.[0]?.pascalName;
+			const component = componentNames?.find((c) => c.pascalName === componentName || c.kebabName === componentName);
+			if (component?.hash) urlOpts._componentHash = component.hash;
+			const result = buildOgImageUrl(urlOpts, extension, isStatic, defaults, ogImageConfig.security?.secret || void 0);
+			if (result.hash) {
+				opts._hash = result.hash;
+				options._hash = result.hash;
+			}
+			const resolvedUrl = joinURL("/", baseURL, result.url);
+			const finalUrl = opts._query && Object.keys(opts._query).length ? withQuery(resolvedUrl, { _query: opts._query }) : resolvedUrl;
+			return generateMeta(finalUrl, opts);
+		});
+	} }, {
+		processTemplateParams: true,
+		tagPriority: 35
+	});
+	ssrContext._ogImagePayloads = payloads;
+}
+function resolveComponentName(component) {
+	component = component || componentNames?.[0]?.pascalName;
+	if (component && componentNames) {
+		const originalName = component;
+		const normalizedName = originalName.split(".").map((s, i) => i === 0 ? s : s.charAt(0).toUpperCase() + s.slice(1)).join("");
+		const inputBase = normalizedName.replace(RE_RENDERER_SUFFIX, "");
+		for (const component2 of componentNames) {
+			if (component2.pascalName === normalizedName) return component2.pascalName;
+			const basePascalName = component2.pascalName.replace(RE_RENDERER_SUFFIX, "");
+			if (basePascalName === originalName || basePascalName === inputBase) return component2.pascalName;
+			for (const { prefix, overlapWord } of [
+				{
+					prefix: "OgImageCommunity",
+					overlapWord: "Community"
+				},
+				{
+					prefix: "OgImageTemplate",
+					overlapWord: "Template"
+				},
+				{
+					prefix: "OgImage",
+					overlapWord: "Image"
+				}
+			]) {
+				if (!basePascalName.startsWith(prefix)) continue;
+				const withoutPrefix = basePascalName.slice(prefix.length);
+				if (withoutPrefix === originalName || withoutPrefix === inputBase) return component2.pascalName;
+				if (withoutPrefix && withoutPrefix !== overlapWord) {
+					const withOverlap = overlapWord + withoutPrefix;
+					if (withOverlap === originalName || withOverlap === inputBase) return component2.pascalName;
+				}
+				break;
+			}
+		}
+	}
+	return component;
+}
+function getOgImagePath(_pagePath, _options) {
+	const { app, defaults, security } = useOgImageRuntimeConfig();
+	const baseURL = app.baseURL;
+	const extension = _options?.extension || defaults?.extension || "png";
+	const isStatic = false;
+	const options = {
+		..._options,
+		_path: _pagePath
+	};
+	const componentName = _options?.component || componentNames?.[0]?.pascalName;
+	const component = componentNames?.find((c) => c.pascalName === componentName || c.kebabName === componentName);
+	if (component?.hash) options._componentHash = component.hash;
+	const result = buildOgImageUrl(options, extension, isStatic, defaults, security?.secret || void 0);
+	return {
+		path: joinURL("/", baseURL, result.url),
+		hash: result.hash
+	};
+}
+function useOgImageRuntimeConfig() {
+	const event = useRequestEvent();
+	const c = event ? /* @__PURE__ */ useRuntimeConfig() : /* @__PURE__ */ useRuntimeConfig();
+	const serverCfg = c["nuxt-og-image"] || {};
+	const merged = {
+		defaults: {},
+		...c.public?.["nuxt-og-image"] || {},
+		...serverCfg
+	};
+	const overrideSecret = c.ogImage?.secret;
+	if (overrideSecret) merged.security = {
+		...merged.security || {},
+		secret: overrideSecret
+	};
+	merged.app = { baseURL: c.app.baseURL };
+	return merged;
+}
+var ogImageCanonicalUrls = /* @__PURE__ */ defineNuxtPlugin((nuxtApp) => {
+	nuxtApp.hooks.hook("app:rendered", async (ctx) => {
+		const { ssrContext } = ctx;
+		const e = useRequestEvent();
+		const path = parseURL(e?.path || "").pathname;
+		if (isInternalRoute(path)) return;
+		ssrContext?.head.use(plugins_exports.TemplateParamsPlugin);
+		ssrContext?.head.use({
+			key: "nuxt-og-image:overrides-and-canonical-urls",
+			hooks: { "tags:afterResolve": (ctx2) => {
+				let title = "";
+				let description = "";
+				for (const tag of ctx2.tags) {
+					if (tag.tag === "title" && tag.textContent) title = tag.textContent;
+					else if (tag.tag === "meta" && tag.props.name === "description") description = tag.props.content || "";
+					if (title && description) break;
+				}
+				for (const tag of ctx2.tags) if (tag.tag === "meta" && (tag.props.property === "og:image" || ["twitter:image:src", "twitter:image"].includes(tag.props.name || ""))) {
+					if (!tag.props.content) {
+						tag.props = {};
+						continue;
+					}
+					tag.props.content = tag.props.content.replaceAll("%title", title).replaceAll("%description", description).replaceAll(" ", "+");
+					if (!tag.props.content?.startsWith("https")) nuxtApp.runWithContext(() => {
+						tag.props.content = toValue(withSiteUrl(tag.props.content || "", {
+							withBase: true,
+							canonical: true
+						}));
+					});
+				}
+			} }
+		});
+	});
+});
+var routeRuleOgImage = /* @__PURE__ */ defineNuxtPlugin((nuxtApp) => {
+	nuxtApp.hooks.hook("app:rendered", async (ctx) => {
+		const { ssrContext } = ctx;
+		const e = useRequestEvent();
+		const path = parseURL(e?.path || "").pathname;
+		if (isInternalRoute(path)) return;
+		let routeRules = createNitroRouteRuleMatcher(ssrContext?.runtimeConfig || {})(path).ogImage;
+		if (typeof routeRules === "undefined") return;
+		if (routeRules === false) {
+			nuxtApp.ssrContext._ogImageInstance?.dispose();
+			nuxtApp.ssrContext._ogImageDevtoolsInstance?.dispose();
+			nuxtApp.ssrContext._ogImageInstance = void 0;
+			nuxtApp.ssrContext._ogImagePayloads = [];
+			return;
+		}
+		routeRules = defu(nuxtApp.ssrContext?.event?.context._nitro?.routeRules?.ogImage, routeRules);
+		const { path: src, hash } = getOgImagePath(ssrContext.url, routeRules);
+		if (hash) routeRules._hash = hash;
+		createOgImageMeta(src, routeRules, nuxtApp.ssrContext);
+	});
+});
+//#endregion
+//#region node_modules/nuxt-og-image/dist/runtime/app/plugins/og-image-canonical-urls.server.js
+var og_image_canonical_urls_server_default = /* @__PURE__ */ defineNuxtPlugin((nuxtApp) => ogImageCanonicalUrls(nuxtApp));
+//#endregion
+//#region node_modules/nuxt-og-image/dist/runtime/app/plugins/route-rule-og-image.server.js
+var route_rule_og_image_server_default = /* @__PURE__ */ defineNuxtPlugin((nuxtApp) => routeRuleOgImage(nuxtApp));
+//#endregion
+//#region node_modules/@nuxtjs/robots/dist/runtime/app/plugins/robot-meta.server.js
+var robot_meta_server_default = /* @__PURE__ */ defineNuxtPlugin({ setup() {
+	const event = useRequestEvent();
+	const ctx = event?.context?.robots;
+	event?.context?.robotsProduction;
+	if (!ctx) return;
+	useHead$1({ meta: [{
+		"name": "robots",
+		"content": () => ctx.rule || "",
+		"data-hint": () => void 0,
+		"data-production-content": () => void 0
+	}] });
+} });
+//#endregion
+//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fcomponents.plugin.mjs
+var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fcomponents_plugin_default = /* @__PURE__ */ defineNuxtPlugin({ name: "nuxt:global-components" });
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/plugins/1.absoluteImageUrls.server.js
+var _1_absoluteImageUrls_server_default = /* @__PURE__ */ defineNuxtPlugin({
+	enforce: "post",
+	setup() {
+		const head = injectHead();
+		if (!head) return;
+		const resolver = createSitePathResolver({
+			withBase: true,
+			absolute: true,
+			canonical: true
+		});
+		head.use({
+			key: "absoluteImageUrls",
+			hooks: { "tags:resolve": ({ tags }) => {
+				for (const tag of tags) {
+					if (tag.tag !== "meta") continue;
+					if (tag.props.property !== "og:image:url" && tag.props.property !== "og:image" && tag.props.name !== "twitter:image" && tag.props.name !== "twitter:image:src") continue;
+					if (typeof tag.props.content !== "string" || !tag.props.content.trim() || tag.props.content.startsWith("http") || tag.props.content.startsWith("//")) continue;
+					tag.props.content = unref(resolver(tag.props.content));
+				}
+			} }
+		});
+	}
+});
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/plugins/0.routeRules.js
+function parseRouteRuleState(context) {
+	const rules = context._nitro?.routeRules;
+	return {
+		head: rules?.head,
+		seoMeta: rules?.seoMeta
+	};
+}
+var _0_routeRules_default = /* @__PURE__ */ defineNuxtPlugin({
+	enforce: "post",
+	env: { islands: false },
+	setup() {
+		const { tagPriority } = (/* @__PURE__ */ useRuntimeConfig()).public["seo-utils"];
+		const routeRuleState = useState("nuxt-seo-utils:routeRules", () => null);
+		routeRuleState.value = parseRouteRuleState(useRequestEvent()?.context);
+		if (routeRuleState.value) {
+			const { head: headInput, seoMeta } = routeRuleState.value;
+			if (headInput) useHead$1(headInput);
+			if (seoMeta) useSeoMeta$1(seoMeta, { tagPriority });
+		}
+	}
+});
+//#endregion
+//#region node_modules/nuxt-seo-utils/dist/runtime/app/logic/applyDefaults.js
+var LOCALE_UNDERSCORE_RE = /_/g;
+function applyDefaults() {
+	const siteConfig = useSiteConfig({ resolveRefs: false });
+	const resolveCurrentLocale = () => {
+		return (toValue(siteConfig.currentLocale) || toValue(siteConfig.defaultLocale) || "en").replace(LOCALE_UNDERSCORE_RE, "-");
+	};
+	injectHead().use(plugins_exports.TemplateParamsPlugin);
+	const { canonicalQueryWhitelist, canonicalLowercase, tagPriority, separator, titleSeparator } = (/* @__PURE__ */ useRuntimeConfig()).public["seo-utils"];
+	const route = useRoute$2();
+	const resolveUrl = createSitePathResolver({
+		withBase: true,
+		absolute: true
+	});
+	const err = /* @__PURE__ */ useError();
+	const resolveSeparator = () => toValue(siteConfig.separator) || separator || toValue(siteConfig.titleSeparator) || titleSeparator;
+	const resolveTitleSeparator = () => toValue(siteConfig.titleSeparator) || titleSeparator || toValue(siteConfig.separator) || separator;
+	const canonicalUrl = computed(() => {
+		if (err.value) return false;
+		const { query } = route;
+		let url = resolveUrl(route.path || "/").value || route.path;
+		if (canonicalLowercase) try {
+			url = url.toLocaleLowerCase(resolveCurrentLocale());
+		} catch {
+			url = url.toLowerCase();
+		}
+		const filteredQuery = Object.fromEntries(Object.entries(query).filter(([key]) => canonicalQueryWhitelist.includes(key)).sort(([a], [b]) => a.localeCompare(b)));
+		return {
+			rel: "canonical",
+			href: Object.keys(filteredQuery).length ? `${url}?${stringifyQuery(filteredQuery)}` : url
+		};
+	});
+	const minimalPriority = { tagPriority: "low" };
+	const seoMetaPriority = { tagPriority };
+	useHead$1({
+		htmlAttrs: { lang: resolveCurrentLocale },
+		templateParams: {
+			site: () => siteConfig,
+			siteName: () => siteConfig.name,
+			separator: resolveSeparator,
+			titleSeparator: resolveTitleSeparator
+		},
+		titleTemplate: () => err.value ? "%s" : "%s %separator %siteName",
+		link: [() => canonicalUrl.value]
+	}, minimalPriority);
+	useSeoMeta$1({ ogLocale: () => {
+		const locale = resolveCurrentLocale();
+		if (locale) {
+			const l = locale.replace("-", "_");
+			if (l.includes("_")) return l;
+		}
+		return false;
+	} }, minimalPriority);
+	const seoMeta = {
+		ogType: "website",
+		ogUrl: () => {
+			const url = canonicalUrl.value;
+			return url ? url.href : false;
+		},
+		ogSiteName: siteConfig.name
+	};
+	if (siteConfig.description) useSeoMeta$1({ description: siteConfig.description }, minimalPriority);
+	if (siteConfig.twitter) {
+		const id = siteConfig.twitter.startsWith("@") ? siteConfig.twitter : `@${siteConfig.twitter}`;
+		seoMeta.twitterCreator = id;
+		seoMeta.twitterSite = id;
+	}
+	useSeoMeta$1(seoMeta, seoMetaPriority);
+}
+//#endregion
+//#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fplugins.server.mjs
+var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fplugins_server_default = [
+	_0_siteConfig_default,
+	plugin$2,
+	plugin$1,
+	plugin,
+	siteConfig_default,
+	inferSeoMetaPlugin_default,
+	titles_default,
+	init_default,
+	defaults_default$1,
+	og_image_canonical_urls_server_default,
+	route_rule_og_image_server_default,
+	robot_meta_server_default,
+	virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fcomponents_plugin_default,
+	_1_absoluteImageUrls_server_default,
+	_0_routeRules_default,
+	/* @__PURE__ */ defineNuxtPlugin({
+		name: "nuxt-seo:defaults",
+		order: 999,
+		env: { islands: false },
+		setup() {
+			applyDefaults();
+		}
+	})
+];
+//#endregion
+//#region node_modules/nuxt/dist/app/components/route-provider.js
+var defineRouteProvider = (name = "RouteProvider") => defineComponent({
+	name,
+	props: {
+		route: {
+			type: Object,
+			required: true
+		},
+		vnode: Object,
+		vnodeRef: Object,
+		renderKey: String,
+		trackRootNodes: Boolean,
+		routeRecord: Object
+	},
+	setup(props) {
+		const previousKey = props.renderKey;
+		const previousRoute = props.route;
+		const route = {};
+		for (const key in props.route) Object.defineProperty(route, key, {
+			get: () => previousKey === props.renderKey ? props.route[key] : previousRoute[key],
+			enumerable: true
+		});
+		provide(PageRouteSymbol, shallowReactive(route));
+		return () => {
+			if (!props.vnode) return props.vnode;
+			return h(props.vnode, { ref: props.vnodeRef });
+		};
+	}
+});
+var RouteProvider = defineRouteProvider();
+//#endregion
+//#region node_modules/nuxt/dist/pages/runtime/page.js
+var page_default = defineComponent({
+	name: "NuxtPage",
+	inheritAttrs: false,
+	props: {
+		name: { type: String },
+		transition: {
+			type: [Boolean, Object],
+			default: void 0
+		},
+		keepalive: {
+			type: [Boolean, Object],
+			default: void 0
+		},
+		route: { type: Object },
+		pageKey: {
+			type: [Function, String],
+			default: null
+		}
+	},
+	setup(props, { attrs, slots, expose }) {
+		const nuxtApp = useNuxtApp();
+		const pageRef = ref();
+		inject(PageRouteSymbol, null);
+		expose({ pageRef });
+		inject(LayoutMetaSymbol, null);
+		nuxtApp.deferHydration();
+		return () => {
+			return h(RouterView, {
+				name: props.name,
+				route: props.route,
+				...attrs
+			}, { default: markStableSlot((routeProps) => {
+				return h(Suspense, { suspensible: true }, { default() {
+					return h(RouteProvider, {
+						vnode: slots.default ? normalizeSlot(slots.default, routeProps) : routeProps.Component,
+						route: routeProps.route,
+						vnodeRef: pageRef
+					});
+				} });
+			}) });
+		};
+	}
+});
+function markStableSlot(fn) {
+	const wrapped = ((routeProps) => {
+		const result = fn(routeProps);
+		if (Array.isArray(result)) return result;
+		if (result == null || !isVNode(result)) return [createCommentVNode()];
+		return [result];
+	});
+	wrapped._n = true;
+	return wrapped;
+}
+function normalizeSlot(slot, data) {
+	const slotContent = slot(data);
+	return slotContent.length === 1 ? h(slotContent[0]) : h(Fragment, void 0, slotContent);
+}
+//#endregion
 //#region src/data/company.js
 var companyInfo = {
 	name: "PT Tevori Global",
@@ -1708,15 +4718,23 @@ var _sfc_main$2 = {
 	__name: "App",
 	__ssrInlineRender: true,
 	setup(__props) {
+		const route = useRoute();
+		const isAdminRoute = computed(() => route.path.startsWith("/admin"));
 		return (_ctx, _push, _parent, _attrs) => {
 			const _component_NuxtPage = page_default;
-			_push(`<div${ssrRenderAttrs(mergeProps({ class: "min-h-screen flex flex-col font-sans bg-gray-50 text-slate-800 selection:bg-[#737474] selection:text-white" }, _attrs))}>`);
-			_push(ssrRenderComponent(_sfc_main$4, null, null, _parent));
-			_push(`<main class="grow pt-16">`);
-			_push(ssrRenderComponent(_component_NuxtPage, null, null, _parent));
-			_push(`</main>`);
-			_push(ssrRenderComponent(_sfc_main$3, null, null, _parent));
-			_push(`</div>`);
+			if (isAdminRoute.value) {
+				_push(`<div${ssrRenderAttrs(_attrs)}>`);
+				_push(ssrRenderComponent(_component_NuxtPage, null, null, _parent));
+				_push(`</div>`);
+			} else {
+				_push(`<div${ssrRenderAttrs(mergeProps({ class: "min-h-screen flex flex-col font-sans bg-gray-50 text-slate-800 selection:bg-[#737474] selection:text-white" }, _attrs))}>`);
+				_push(ssrRenderComponent(_sfc_main$4, null, null, _parent));
+				_push(`<main class="grow pt-16">`);
+				_push(ssrRenderComponent(_component_NuxtPage, null, null, _parent));
+				_push(`</main>`);
+				_push(ssrRenderComponent(_sfc_main$3, null, null, _parent));
+				_push(`</div>`);
+			}
 		};
 	}
 };
@@ -1824,5 +4842,5 @@ const entry = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
   default: entry_default
 }, Symbol.toStringTag, { value: 'Module' }));
 
-export { NuxtLink as N, companyInfo as c, entry as e, useHead$1 as u };
+export { NuxtLink as N, useSeoMeta$1 as a, useHead$1 as b, createError$1 as c, companyInfo as d, useRuntimeConfig as e, entry as f, useAsyncData as u };
 //# sourceMappingURL=entry.mjs.map

@@ -18,7 +18,27 @@ export default defineNuxtConfig({
     ],
   },
 
-  modules: [],
+  modules: [
+    '@nuxtjs/seo'
+  ],
+
+  site: {
+    url: 'https://tevori-global.vercel.app',
+    name: 'PT Tevori Global Indonesia',
+    description: 'Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities.',
+    defaultLocale: 'en',
+  },
+
+  seo: {
+    // We already cleaned up the duplicates, but just keeping it silent for other dev plugins
+    validateAppHead: true
+  },
+
+  sitemap: {
+    sources: [
+      '/api/sitemap-urls'
+    ]
+  },
 
   runtimeConfig: {
     // Private keys are only available on the server
@@ -34,8 +54,6 @@ export default defineNuxtConfig({
     head: {
       title: 'PT Tevori Global Indonesia - B2B Export & Buyer Agent',
       meta: [
-        { charset: 'utf-8' },
-        { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         { name: 'description', content: 'Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities, Authentic Balinese Handcrafted Arts.' },
       ],
       link: [

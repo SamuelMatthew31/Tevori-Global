@@ -1,11 +1,16 @@
-import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import http from 'node:http';
+import process from 'node:process';globalThis._importMeta_=globalThis._importMeta_||{url:"file:///_entry.js",env:process.env};import { LRUCache } from 'lru-cache';
+import { fnv1a64Base36 } from 'fnv1a-64';
+import { identify } from 'object-identity';
+import http from 'node:http';
 import https from 'node:https';
 import { EventEmitter } from 'node:events';
 import { Buffer as Buffer$1 } from 'node:buffer';
 import { promises, existsSync } from 'node:fs';
-import { resolve as resolve$1, dirname as dirname$1, join } from 'node:path';
+import { resolve as resolve$2, dirname as dirname$1, join as join$1 } from 'node:path';
 import { createHash } from 'node:crypto';
+import { createConsola } from 'consola';
 import { fileURLToPath } from 'node:url';
+import { collectSitemap } from 'sitemapd/parse';
 
 const suspectProtoRx = /"(?:_|\\u0{2}5[Ff]){2}(?:p|\\u0{2}70)(?:r|\\u0{2}72)(?:o|\\u0{2}6[Ff])(?:t|\\u0{2}74)(?:o|\\u0{2}6[Ff])(?:_|\\u0{2}5[Ff]){2}"\s*:/;
 const suspectConstructorRx = /"(?:c|\\u0063)(?:o|\\u006[Ff])(?:n|\\u006[Ee])(?:s|\\u0073)(?:t|\\u0074)(?:r|\\u0072)(?:u|\\u0075)(?:c|\\u0063)(?:t|\\u0074)(?:o|\\u006[Ff])(?:r|\\u0072)"\s*:/;
@@ -163,7 +168,7 @@ const PROTOCOL_STRICT_REGEX = /^[\s\w\0+.-]{2,}:([/\\]{1,2})/;
 const PROTOCOL_REGEX = /^[\s\w\0+.-]{2,}:([/\\]{2})?/;
 const PROTOCOL_RELATIVE_REGEX = /^([/\\]\s*){2,}[^/\\]/;
 const PROTOCOL_SCRIPT_RE = /^[\s\0]*(blob|data|javascript|vbscript):$/i;
-const TRAILING_SLASH_RE = /\/$|\/\?|\/#/;
+const TRAILING_SLASH_RE$1 = /\/$|\/\?|\/#/;
 const JOIN_LEADING_SLASH_RE = /^\.?\//;
 function hasProtocol(inputString, opts = {}) {
   if (typeof opts === "boolean") {
@@ -181,7 +186,7 @@ function hasTrailingSlash(input = "", respectQueryAndFragment) {
   if (!respectQueryAndFragment) {
     return input.endsWith("/");
   }
-  return TRAILING_SLASH_RE.test(input);
+  return TRAILING_SLASH_RE$1.test(input);
 }
 function withoutTrailingSlash(input = "", respectQueryAndFragment) {
   if (!respectQueryAndFragment) {
@@ -223,6 +228,9 @@ function withTrailingSlash(input = "", respectQueryAndFragment) {
 }
 function hasLeadingSlash(input = "") {
   return input.startsWith("/");
+}
+function withoutLeadingSlash(input = "") {
+  return (hasLeadingSlash(input) ? input.slice(1) : input) || "/";
 }
 function withLeadingSlash(input = "") {
   return hasLeadingSlash(input) ? input : "/" + input;
@@ -326,6 +334,19 @@ function joinRelativeURL(..._input) {
   }
   return url;
 }
+function withHttps(input) {
+  return withProtocol(input, "https://");
+}
+function withProtocol(input, protocol) {
+  let match = input.match(PROTOCOL_REGEX);
+  if (!match) {
+    match = input.match(/^\/{2,}/);
+  }
+  if (!match) {
+    return protocol + input;
+  }
+  return protocol + input.slice(match[0].length);
+}
 
 const protocolRelative = Symbol.for("ufo:protocolRelative");
 function parseURL(input = "", defaultProto) {
@@ -345,7 +366,7 @@ function parseURL(input = "", defaultProto) {
     };
   }
   if (!hasProtocol(input, { acceptRelative: true })) {
-    return parsePath(input);
+    return defaultProto ? parseURL(defaultProto + input) : parsePath(input);
   }
   const [, protocol = "", auth, hostAndPath = ""] = input.replace(/\\/g, "/").match(/^[\s\0]*([\w+.-]{2,}:)?\/\/([^/@]+@)?(.*)/) || [];
   let [, host = "", path = ""] = hostAndPath.match(/([^#/?]*)(.*)?/) || [];
@@ -672,7 +693,7 @@ const defuFn = createDefu((object, key, currentValue) => {
   }
 });
 
-function o(n){throw new Error(`${n} is not implemented yet!`)}let i$1 = class i extends EventEmitter{__unenv__={};readableEncoding=null;readableEnded=true;readableFlowing=false;readableHighWaterMark=0;readableLength=0;readableObjectMode=false;readableAborted=false;readableDidRead=false;closed=false;errored=null;readable=false;destroyed=false;static from(e,t){return new i(t)}constructor(e){super();}_read(e){}read(e){}setEncoding(e){return this}pause(){return this}resume(){return this}isPaused(){return  true}unpipe(e){return this}unshift(e,t){}wrap(e){return this}push(e,t){return  false}_destroy(e,t){this.removeAllListeners();}destroy(e){return this.destroyed=true,this._destroy(e),this}pipe(e,t){return {}}compose(e,t){throw new Error("Method not implemented.")}[Symbol.asyncDispose](){return this.destroy(),Promise.resolve()}async*[Symbol.asyncIterator](){throw o("Readable.asyncIterator")}iterator(e){throw o("Readable.iterator")}map(e,t){throw o("Readable.map")}filter(e,t){throw o("Readable.filter")}forEach(e,t){throw o("Readable.forEach")}reduce(e,t,r){throw o("Readable.reduce")}find(e,t){throw o("Readable.find")}findIndex(e,t){throw o("Readable.findIndex")}some(e,t){throw o("Readable.some")}toArray(e){throw o("Readable.toArray")}every(e,t){throw o("Readable.every")}flatMap(e,t){throw o("Readable.flatMap")}drop(e,t){throw o("Readable.drop")}take(e,t){throw o("Readable.take")}asIndexedPairs(e){throw o("Readable.asIndexedPairs")}};let l$1 = class l extends EventEmitter{__unenv__={};writable=true;writableEnded=false;writableFinished=false;writableHighWaterMark=0;writableLength=0;writableObjectMode=false;writableCorked=0;closed=false;errored=null;writableNeedDrain=false;writableAborted=false;destroyed=false;_data;_encoding="utf8";constructor(e){super();}pipe(e,t){return {}}_write(e,t,r){if(this.writableEnded){r&&r();return}if(this._data===void 0)this._data=e;else {const s=typeof this._data=="string"?Buffer$1.from(this._data,this._encoding||t||"utf8"):this._data,a=typeof e=="string"?Buffer$1.from(e,t||this._encoding||"utf8"):e;this._data=Buffer$1.concat([s,a]);}this._encoding=t,r&&r();}_writev(e,t){}_destroy(e,t){}_final(e){}write(e,t,r){const s=typeof t=="string"?this._encoding:"utf8",a=typeof t=="function"?t:typeof r=="function"?r:void 0;return this._write(e,s,a),true}setDefaultEncoding(e){return this}end(e,t,r){const s=typeof e=="function"?e:typeof t=="function"?t:typeof r=="function"?r:void 0;if(this.writableEnded)return s&&s(),this;const a=e===s?void 0:e;if(a){const u=t===s?void 0:t;this.write(a,u);}return this.writableEnded=true,this.writableFinished=true,this.emit("close"),this.emit("finish"),s&&s(),this}cork(){}uncork(){}destroy(e){return this.destroyed=true,delete this._data,this.removeAllListeners(),this}compose(e,t){throw new Error("Method not implemented.")}[Symbol.asyncDispose](){return Promise.resolve()}};const c=class{allowHalfOpen=true;_destroy;constructor(e=new i$1,t=new l$1){Object.assign(this,e),Object.assign(this,t),this._destroy=m(e._destroy,t._destroy);}};function _(){return Object.assign(c.prototype,i$1.prototype),Object.assign(c.prototype,l$1.prototype),c}function m(...n){return function(...e){for(const t of n)t(...e);}}const g=_();class A extends g{__unenv__={};bufferSize=0;bytesRead=0;bytesWritten=0;connecting=false;destroyed=false;pending=false;localAddress="";localPort=0;remoteAddress="";remoteFamily="";remotePort=0;autoSelectFamilyAttemptedAddresses=[];readyState="readOnly";constructor(e){super();}write(e,t,r){return  false}connect(e,t,r){return this}end(e,t,r){return this}setEncoding(e){return this}pause(){return this}resume(){return this}setTimeout(e,t){return this}setNoDelay(e){return this}setKeepAlive(e,t){return this}address(){return {}}unref(){return this}ref(){return this}destroySoon(){this.destroy();}resetAndDestroy(){const e=new Error("ERR_SOCKET_CLOSED");return e.code="ERR_SOCKET_CLOSED",this.destroy(e),this}}class y extends i$1{aborted=false;httpVersion="1.1";httpVersionMajor=1;httpVersionMinor=1;complete=true;connection;socket;headers={};trailers={};method="GET";url="/";statusCode=200;statusMessage="";closed=false;errored=null;readable=false;constructor(e){super(),this.socket=this.connection=e||new A;}get rawHeaders(){const e=this.headers,t=[];for(const r in e)if(Array.isArray(e[r]))for(const s of e[r])t.push(r,s);else t.push(r,e[r]);return t}get rawTrailers(){return []}setTimeout(e,t){return this}get headersDistinct(){return p(this.headers)}get trailersDistinct(){return p(this.trailers)}}function p(n){const e={};for(const[t,r]of Object.entries(n))t&&(e[t]=(Array.isArray(r)?r:[r]).filter(Boolean));return e}class w extends l$1{statusCode=200;statusMessage="";upgrading=false;chunkedEncoding=false;shouldKeepAlive=false;useChunkedEncodingByDefault=false;sendDate=false;finished=false;headersSent=false;strictContentLength=false;connection=null;socket=null;req;_headers={};constructor(e){super(),this.req=e;}assignSocket(e){e._httpMessage=this,this.socket=e,this.connection=e,this.emit("socket",e),this._flush();}_flush(){this.flushHeaders();}detachSocket(e){}writeContinue(e){}writeHead(e,t,r){e&&(this.statusCode=e),typeof t=="string"&&(this.statusMessage=t,t=void 0);const s=r||t;if(s&&!Array.isArray(s))for(const a in s)this.setHeader(a,s[a]);return this.headersSent=true,this}writeProcessing(){}setTimeout(e,t){return this}appendHeader(e,t){e=e.toLowerCase();const r=this._headers[e],s=[...Array.isArray(r)?r:[r],...Array.isArray(t)?t:[t]].filter(Boolean);return this._headers[e]=s.length>1?s:s[0],this}setHeader(e,t){return this._headers[e.toLowerCase()]=t,this}setHeaders(e){for(const[t,r]of Object.entries(e))this.setHeader(t,r);return this}getHeader(e){return this._headers[e.toLowerCase()]}getHeaders(){return this._headers}getHeaderNames(){return Object.keys(this._headers)}hasHeader(e){return e.toLowerCase()in this._headers}removeHeader(e){delete this._headers[e.toLowerCase()];}addTrailers(e){}flushHeaders(){}writeEarlyHints(e,t){typeof t=="function"&&t();}}const E=(()=>{const n=function(){};return n.prototype=Object.create(null),n})();function R(n={}){const e=new E,t=Array.isArray(n)||H(n)?n:Object.entries(n);for(const[r,s]of t)if(s){if(e[r]===void 0){e[r]=s;continue}e[r]=[...Array.isArray(e[r])?e[r]:[e[r]],...Array.isArray(s)?s:[s]];}return e}function H(n){return typeof n?.entries=="function"}function v(n={}){if(n instanceof Headers)return n;const e=new Headers;for(const[t,r]of Object.entries(n))if(r!==void 0){if(Array.isArray(r)){for(const s of r)e.append(t,String(s));continue}e.set(t,String(r));}return e}const S=new Set([101,204,205,304]);async function b(n,e){const t=new y,r=new w(t);t.url=e.url?.toString()||"/";let s;if(!t.url.startsWith("/")){const d=new URL(t.url);s=d.host,t.url=d.pathname+d.search+d.hash;}t.method=e.method||"GET",t.headers=R(e.headers||{}),t.headers.host||(t.headers.host=e.host||s||"localhost"),t.connection.encrypted=t.connection.encrypted||e.protocol==="https",t.body=e.body||null,t.__unenv__=e.context,await n(t,r);let a=r._data;(S.has(r.statusCode)||t.method.toUpperCase()==="HEAD")&&(a=null,delete r._headers["content-length"]);const u={status:r.statusCode,statusText:r.statusMessage,headers:r._headers,body:a};return t.destroy(),r.destroy(),u}async function C(n,e,t={}){try{const r=await b(n,{url:e,...t});return new Response(r.body,{status:r.status,statusText:r.statusText,headers:v(r.headers)})}catch(r){return new Response(r.toString(),{status:Number.parseInt(r.statusCode||r.code)||500,statusText:r.statusText})}}
+function o$1(n){throw new Error(`${n} is not implemented yet!`)}let i$2 = class i extends EventEmitter{__unenv__={};readableEncoding=null;readableEnded=true;readableFlowing=false;readableHighWaterMark=0;readableLength=0;readableObjectMode=false;readableAborted=false;readableDidRead=false;closed=false;errored=null;readable=false;destroyed=false;static from(e,t){return new i(t)}constructor(e){super();}_read(e){}read(e){}setEncoding(e){return this}pause(){return this}resume(){return this}isPaused(){return  true}unpipe(e){return this}unshift(e,t){}wrap(e){return this}push(e,t){return  false}_destroy(e,t){this.removeAllListeners();}destroy(e){return this.destroyed=true,this._destroy(e),this}pipe(e,t){return {}}compose(e,t){throw new Error("Method not implemented.")}[Symbol.asyncDispose](){return this.destroy(),Promise.resolve()}async*[Symbol.asyncIterator](){throw o$1("Readable.asyncIterator")}iterator(e){throw o$1("Readable.iterator")}map(e,t){throw o$1("Readable.map")}filter(e,t){throw o$1("Readable.filter")}forEach(e,t){throw o$1("Readable.forEach")}reduce(e,t,r){throw o$1("Readable.reduce")}find(e,t){throw o$1("Readable.find")}findIndex(e,t){throw o$1("Readable.findIndex")}some(e,t){throw o$1("Readable.some")}toArray(e){throw o$1("Readable.toArray")}every(e,t){throw o$1("Readable.every")}flatMap(e,t){throw o$1("Readable.flatMap")}drop(e,t){throw o$1("Readable.drop")}take(e,t){throw o$1("Readable.take")}asIndexedPairs(e){throw o$1("Readable.asIndexedPairs")}};let l$2 = class l extends EventEmitter{__unenv__={};writable=true;writableEnded=false;writableFinished=false;writableHighWaterMark=0;writableLength=0;writableObjectMode=false;writableCorked=0;closed=false;errored=null;writableNeedDrain=false;writableAborted=false;destroyed=false;_data;_encoding="utf8";constructor(e){super();}pipe(e,t){return {}}_write(e,t,r){if(this.writableEnded){r&&r();return}if(this._data===void 0)this._data=e;else {const s=typeof this._data=="string"?Buffer$1.from(this._data,this._encoding||t||"utf8"):this._data,a=typeof e=="string"?Buffer$1.from(e,t||this._encoding||"utf8"):e;this._data=Buffer$1.concat([s,a]);}this._encoding=t,r&&r();}_writev(e,t){}_destroy(e,t){}_final(e){}write(e,t,r){const s=typeof t=="string"?this._encoding:"utf8",a=typeof t=="function"?t:typeof r=="function"?r:void 0;return this._write(e,s,a),true}setDefaultEncoding(e){return this}end(e,t,r){const s=typeof e=="function"?e:typeof t=="function"?t:typeof r=="function"?r:void 0;if(this.writableEnded)return s&&s(),this;const a=e===s?void 0:e;if(a){const u=t===s?void 0:t;this.write(a,u);}return this.writableEnded=true,this.writableFinished=true,this.emit("close"),this.emit("finish"),s&&s(),this}cork(){}uncork(){}destroy(e){return this.destroyed=true,delete this._data,this.removeAllListeners(),this}compose(e,t){throw new Error("Method not implemented.")}[Symbol.asyncDispose](){return Promise.resolve()}};const c=class{allowHalfOpen=true;_destroy;constructor(e=new i$2,t=new l$2){Object.assign(this,e),Object.assign(this,t),this._destroy=m$1(e._destroy,t._destroy);}};function _(){return Object.assign(c.prototype,i$2.prototype),Object.assign(c.prototype,l$2.prototype),c}function m$1(...n){return function(...e){for(const t of n)t(...e);}}const g=_();let A$1 = class A extends g{__unenv__={};bufferSize=0;bytesRead=0;bytesWritten=0;connecting=false;destroyed=false;pending=false;localAddress="";localPort=0;remoteAddress="";remoteFamily="";remotePort=0;autoSelectFamilyAttemptedAddresses=[];readyState="readOnly";constructor(e){super();}write(e,t,r){return  false}connect(e,t,r){return this}end(e,t,r){return this}setEncoding(e){return this}pause(){return this}resume(){return this}setTimeout(e,t){return this}setNoDelay(e){return this}setKeepAlive(e,t){return this}address(){return {}}unref(){return this}ref(){return this}destroySoon(){this.destroy();}resetAndDestroy(){const e=new Error("ERR_SOCKET_CLOSED");return e.code="ERR_SOCKET_CLOSED",this.destroy(e),this}};class y extends i$2{aborted=false;httpVersion="1.1";httpVersionMajor=1;httpVersionMinor=1;complete=true;connection;socket;headers={};trailers={};method="GET";url="/";statusCode=200;statusMessage="";closed=false;errored=null;readable=false;constructor(e){super(),this.socket=this.connection=e||new A$1;}get rawHeaders(){const e=this.headers,t=[];for(const r in e)if(Array.isArray(e[r]))for(const s of e[r])t.push(r,s);else t.push(r,e[r]);return t}get rawTrailers(){return []}setTimeout(e,t){return this}get headersDistinct(){return p$1(this.headers)}get trailersDistinct(){return p$1(this.trailers)}}function p$1(n){const e={};for(const[t,r]of Object.entries(n))t&&(e[t]=(Array.isArray(r)?r:[r]).filter(Boolean));return e}class w extends l$2{statusCode=200;statusMessage="";upgrading=false;chunkedEncoding=false;shouldKeepAlive=false;useChunkedEncodingByDefault=false;sendDate=false;finished=false;headersSent=false;strictContentLength=false;connection=null;socket=null;req;_headers={};constructor(e){super(),this.req=e;}assignSocket(e){e._httpMessage=this,this.socket=e,this.connection=e,this.emit("socket",e),this._flush();}_flush(){this.flushHeaders();}detachSocket(e){}writeContinue(e){}writeHead(e,t,r){e&&(this.statusCode=e),typeof t=="string"&&(this.statusMessage=t,t=void 0);const s=r||t;if(s&&!Array.isArray(s))for(const a in s)this.setHeader(a,s[a]);return this.headersSent=true,this}writeProcessing(){}setTimeout(e,t){return this}appendHeader(e,t){e=e.toLowerCase();const r=this._headers[e],s=[...Array.isArray(r)?r:[r],...Array.isArray(t)?t:[t]].filter(Boolean);return this._headers[e]=s.length>1?s:s[0],this}setHeader(e,t){return this._headers[e.toLowerCase()]=t,this}setHeaders(e){for(const[t,r]of Object.entries(e))this.setHeader(t,r);return this}getHeader(e){return this._headers[e.toLowerCase()]}getHeaders(){return this._headers}getHeaderNames(){return Object.keys(this._headers)}hasHeader(e){return e.toLowerCase()in this._headers}removeHeader(e){delete this._headers[e.toLowerCase()];}addTrailers(e){}flushHeaders(){}writeEarlyHints(e,t){typeof t=="function"&&t();}}const E$1=(()=>{const n=function(){};return n.prototype=Object.create(null),n})();function R(n={}){const e=new E$1,t=Array.isArray(n)||H(n)?n:Object.entries(n);for(const[r,s]of t)if(s){if(e[r]===void 0){e[r]=s;continue}e[r]=[...Array.isArray(e[r])?e[r]:[e[r]],...Array.isArray(s)?s:[s]];}return e}function H(n){return typeof n?.entries=="function"}function v$1(n={}){if(n instanceof Headers)return n;const e=new Headers;for(const[t,r]of Object.entries(n))if(r!==void 0){if(Array.isArray(r)){for(const s of r)e.append(t,String(s));continue}e.set(t,String(r));}return e}const S$1=new Set([101,204,205,304]);async function b$1(n,e){const t=new y,r=new w(t);t.url=e.url?.toString()||"/";let s;if(!t.url.startsWith("/")){const d=new URL(t.url);s=d.host,t.url=d.pathname+d.search+d.hash;}t.method=e.method||"GET",t.headers=R(e.headers||{}),t.headers.host||(t.headers.host=e.host||s||"localhost"),t.connection.encrypted=t.connection.encrypted||e.protocol==="https",t.body=e.body||null,t.__unenv__=e.context,await n(t,r);let a=r._data;(S$1.has(r.statusCode)||t.method.toUpperCase()==="HEAD")&&(a=null,delete r._headers["content-length"]);const u={status:r.statusCode,statusText:r.statusMessage,headers:r._headers,body:a};return t.destroy(),r.destroy(),u}async function C(n,e,t={}){try{const r=await b$1(n,{url:e,...t});return new Response(r.body,{status:r.status,statusText:r.statusText,headers:v$1(r.headers)})}catch(r){return new Response(r.toString(),{status:Number.parseInt(r.statusCode||r.code)||500,statusText:r.statusText})}}
 
 function hasProp(obj, prop) {
   try {
@@ -824,6 +845,7 @@ function getRequestHeader(event, name) {
   const value = headers[name.toLowerCase()];
   return value;
 }
+const getHeader = getRequestHeader;
 function getRequestHost(event, opts = {}) {
   if (opts.xForwardedHost) {
     const _header = event.node.req.headers["x-forwarded-host"];
@@ -1139,6 +1161,7 @@ const setHeaders = setResponseHeaders;
 function setResponseHeader(event, name, value) {
   event.node.res.setHeader(name, value);
 }
+const setHeader = setResponseHeader;
 function appendResponseHeader(event, name, value) {
   let current = event.node.res.getHeader(name);
   if (!current) {
@@ -1367,7 +1390,7 @@ function getProxyRequestHeaders(event, opts) {
   }
   return headers;
 }
-function fetchWithEvent(event, req, init, options) {
+function fetchWithEvent$1(event, req, init, options) {
   return _getFetch(options?.fetch)(req, {
     ...init,
     context: init?.context || event.context,
@@ -2162,7 +2185,7 @@ function createHooks() {
   return new Hookable();
 }
 
-const s=globalThis.Headers,i=globalThis.AbortController,l=globalThis.fetch||(()=>{throw new Error("[node-fetch-native] Failed to fetch: `globalThis.fetch` is not available!")});
+const s=globalThis.Headers,i$1=globalThis.AbortController,l$1=globalThis.fetch||(()=>{throw new Error("[node-fetch-native] Failed to fetch: `globalThis.fetch` is not available!")});
 
 class FetchError extends Error {
   constructor(message, opts) {
@@ -2512,7 +2535,7 @@ function createFetch(globalOptions = {}) {
 function createNodeFetch() {
   const useKeepAlive = JSON.parse(process.env.FETCH_KEEP_ALIVE || "false");
   if (!useKeepAlive) {
-    return l;
+    return l$1;
   }
   const agentOptions = { keepAlive: true };
   const httpAgent = new http.Agent(agentOptions);
@@ -2523,13 +2546,13 @@ function createNodeFetch() {
     }
   };
   return function nodeFetchWithKeepAlive(input, init) {
-    return l(input, { ...nodeFetchOptions, ...init });
+    return l$1(input, { ...nodeFetchOptions, ...init });
   };
 }
 const fetch = globalThis.fetch ? (...args) => globalThis.fetch(...args) : createNodeFetch();
 const Headers$1 = globalThis.Headers || s;
-const AbortController = globalThis.AbortController || i;
-const ofetch = createFetch({ fetch, Headers: Headers$1, AbortController });
+const AbortController$1 = globalThis.AbortController || i$1;
+const ofetch = createFetch({ fetch, Headers: Headers$1, AbortController: AbortController$1 });
 const $fetch = ofetch;
 
 function wrapToPromise(value) {
@@ -2545,7 +2568,7 @@ function asyncCall(function_, ...arguments_) {
     return Promise.reject(error);
   }
 }
-function isPrimitive(value) {
+function isPrimitive$1(value) {
   const type = typeof value;
   return value === null || type !== "object" && type !== "function";
 }
@@ -2554,7 +2577,7 @@ function isPureObject(value) {
   return !proto || proto.isPrototypeOf(Object);
 }
 function stringify(value) {
-  if (isPrimitive(value)) {
+  if (isPrimitive$1(value)) {
     return String(value);
   }
   if (isPureObject(value) || Array.isArray(value)) {
@@ -2687,11 +2710,11 @@ function defineDriver$1(factory) {
   return factory;
 }
 
-const DRIVER_NAME$1 = "memory";
+const DRIVER_NAME$2 = "memory";
 const memory = defineDriver$1(() => {
   const data = /* @__PURE__ */ new Map();
   return {
-    name: DRIVER_NAME$1,
+    name: DRIVER_NAME$2,
     getInstance: () => data,
     hasItem(key) {
       return data.has(key);
@@ -3207,7 +3230,7 @@ async function readdirRecursive(dir, ignore, maxDepth) {
   const files = [];
   await Promise.all(
     entries.map(async (entry) => {
-      const entryPath = resolve$1(dir, entry.name);
+      const entryPath = resolve$2(dir, entry.name);
       if (entry.isDirectory()) {
         if (maxDepth === void 0 || maxDepth > 0) {
           const dirFiles = await readdirRecursive(
@@ -3230,7 +3253,7 @@ async function rmRecursive(dir) {
   const entries = await readdir(dir);
   await Promise.all(
     entries.map((entry) => {
-      const entryPath = resolve$1(dir, entry.name);
+      const entryPath = resolve$2(dir, entry.name);
       if (entry.isDirectory()) {
         return rmRecursive(entryPath).then(() => promises.rmdir(entryPath));
       } else {
@@ -3241,24 +3264,24 @@ async function rmRecursive(dir) {
 }
 
 const PATH_TRAVERSE_RE = /\.\.:|\.\.$/;
-const DRIVER_NAME = "fs-lite";
+const DRIVER_NAME$1 = "fs-lite";
 const unstorage_47drivers_47fs_45lite = defineDriver((opts = {}) => {
   if (!opts.base) {
-    throw createRequiredError(DRIVER_NAME, "base");
+    throw createRequiredError(DRIVER_NAME$1, "base");
   }
-  opts.base = resolve$1(opts.base);
+  opts.base = resolve$2(opts.base);
   const r = (key) => {
     if (PATH_TRAVERSE_RE.test(key)) {
       throw createError(
-        DRIVER_NAME,
+        DRIVER_NAME$1,
         `Invalid key: ${JSON.stringify(key)}. It should not contain .. segments`
       );
     }
-    const resolved = join(opts.base, key.replace(/:/g, "/"));
+    const resolved = join$1(opts.base, key.replace(/:/g, "/"));
     return resolved;
   };
   return {
-    name: DRIVER_NAME,
+    name: DRIVER_NAME$1,
     options: opts,
     flags: {
       maxDepth: true
@@ -3316,6 +3339,153 @@ function useStorage(base = "") {
   return base ? prefixStorage(storage, base) : storage;
 }
 
+function serialize$1(input) {
+	if (typeof input === "string") return `'${input}'`;
+	return new Serializer().serialize(input);
+}
+const asciiOrder = " _-,;:!?.'\"()[]{}@*/\\&#%`^+<=>|~$0123456789abcdefghijklmnopqrstuvwxyz";
+const asciiWeights = /*@__PURE__*/ (function() {
+	const weights = /* @__PURE__ */ new Uint8Array(128);
+	for (let i = 0; i < 69; i++) weights[asciiOrder.charCodeAt(i)] = i + 1;
+	for (let code = 65; code <= 90; code++) weights[code] = weights[code + 32];
+	return weights;
+})();
+function compareStrings(a, b) {
+	if (a === b) return 0;
+	const length = Math.min(a.length, b.length);
+	let tieBreaker = 0;
+	for (let i = 0; i < length; i++) {
+		const codeA = a.charCodeAt(i);
+		const codeB = b.charCodeAt(i);
+		if (codeA === codeB) continue;
+		const weightA = codeA < 128 && asciiWeights[codeA] ? asciiWeights[codeA] : codeA + 128;
+		const weightB = codeB < 128 && asciiWeights[codeB] ? asciiWeights[codeB] : codeB + 128;
+		if (weightA !== weightB) return weightA < weightB ? -1 : 1;
+		if (tieBreaker === 0) tieBreaker = codeA > codeB ? -1 : 1;
+	}
+	if (a.length !== b.length) return a.length < b.length ? -1 : 1;
+	return tieBreaker;
+}
+const Serializer = /*@__PURE__*/ (function() {
+	class Serializer {
+		#context = /* @__PURE__ */ new Map();
+		compare(a, b) {
+			const typeA = typeof a;
+			const typeB = typeof b;
+			if (typeA === "string" && typeB === "string") return compareStrings(a, b);
+			if (typeA === "number" && typeB === "number") return a - b;
+			return compareStrings(this.serialize(a, true), this.serialize(b, true));
+		}
+		serialize(value, noQuotes) {
+			if (value === null) return "null";
+			switch (typeof value) {
+				case "string": return noQuotes ? value : `'${value}'`;
+				case "bigint": return `${value}n`;
+				case "object": return this.$object(value);
+				case "function": return this.$function(value);
+			}
+			return String(value);
+		}
+		serializeObject(object) {
+			const objString = Object.prototype.toString.call(object);
+			if (objString !== "[object Object]") return this.serializeBuiltInType(objString.length < 10 ? `unknown:${objString}` : objString.slice(8, -1), object);
+			const constructor = object.constructor;
+			const objName = constructor === Object || constructor === void 0 ? "" : constructor.name;
+			if (objName !== "" && globalThis[objName] === constructor) return this.serializeBuiltInType(objName, object);
+			if ("toJSON" in object && typeof object.toJSON === "function") {
+				const json = object.toJSON();
+				return objName + (json !== null && typeof json === "object" ? this.$object(json) : `(${this.serialize(json)})`);
+			}
+			const keys = Object.keys(object).sort(compareStrings);
+			let content = `${objName}{`;
+			for (let i = 0; i < keys.length; i++) {
+				const key = keys[i];
+				content += `${key}:${this.serialize(object[key])}`;
+				if (i < keys.length - 1) content += ",";
+			}
+			return content + "}";
+		}
+		serializeBuiltInType(type, object) {
+			const handler = this["$" + type];
+			if (handler) return handler.call(this, object);
+			if (typeof object.entries === "function") return this.serializeObjectEntries(type, object.entries());
+			throw new Error(`Cannot serialize ${type}`);
+		}
+		serializeObjectEntries(type, entries) {
+			const sortedEntries = Array.from(entries).sort((a, b) => this.compare(a[0], b[0]));
+			let content = `${type}{`;
+			for (let i = 0; i < sortedEntries.length; i++) {
+				const [key, value] = sortedEntries[i];
+				content += `${this.serialize(key, true)}:${this.serialize(value)}`;
+				if (i < sortedEntries.length - 1) content += ",";
+			}
+			return content + "}";
+		}
+		$object(object) {
+			let content = this.#context.get(object);
+			if (content === void 0) {
+				this.#context.set(object, `#${this.#context.size}`);
+				content = this.serializeObject(object);
+				this.#context.set(object, content);
+			}
+			return content;
+		}
+		$function(fn) {
+			const fnStr = Function.prototype.toString.call(fn);
+			if (fnStr.slice(-15) === "[native code] }") return `${fn.name || ""}()[native]`;
+			return `${fn.name}(${fn.length})${fnStr.replace(/\s*\n\s*/g, "")}`;
+		}
+		$Array(arr) {
+			let content = "[";
+			for (let i = 0; i < arr.length; i++) {
+				content += this.serialize(arr[i]);
+				if (i < arr.length - 1) content += ",";
+			}
+			return content + "]";
+		}
+		$Date(date) {
+			try {
+				return `Date(${date.toISOString()})`;
+			} catch {
+				return `Date(null)`;
+			}
+		}
+		$ArrayBuffer(arr) {
+			return `ArrayBuffer[${new Uint8Array(arr).join(",")}]`;
+		}
+		$Set(set) {
+			return `Set${this.$Array(Array.from(set).sort((a, b) => this.compare(a, b)))}`;
+		}
+		$Map(map) {
+			return this.serializeObjectEntries("Map", map.entries());
+		}
+	}
+	for (const type of [
+		"Error",
+		"RegExp",
+		"URL"
+	]) Serializer.prototype["$" + type] = function(val) {
+		return `${type}(${val})`;
+	};
+	for (const type of [
+		"Int8Array",
+		"Uint8Array",
+		"Uint8ClampedArray",
+		"Int16Array",
+		"Uint16Array",
+		"Int32Array",
+		"Uint32Array",
+		"Float32Array",
+		"Float64Array"
+	]) Serializer.prototype["$" + type] = function(arr) {
+		return `${type}[${arr.join(",")}]`;
+	};
+	for (const type of ["BigInt64Array", "BigUint64Array"]) Serializer.prototype["$" + type] = function(arr) {
+		return `${type}[${arr.join("n,")}${arr.length > 0 ? "n" : ""}]`;
+	};
+	return Serializer;
+})();
+
 const fastHash = /*@__PURE__*/ (() => globalThis.process?.getBuiltinModule?.("crypto")?.hash)();
 const algorithm = "sha256";
 const encoding = "base64url";
@@ -3323,6 +3493,10 @@ function digest(data) {
 	if (fastHash) return fastHash(algorithm, data, encoding);
 	const h = createHash(algorithm).update(data);
 	return globalThis.process?.versions?.webcontainer ? h.digest().toString(encoding) : h.digest(encoding);
+}
+
+function hash$1(input) {
+	return digest(serialize$1(input));
 }
 
 const Hasher = /* @__PURE__ */ (() => {
@@ -3743,10 +3917,10 @@ function defineCachedEventHandler(handler, opts = defaultCacheOptions()) {
         }
       });
       const event = createEvent(reqProxy, resProxy);
-      event.fetch = (url, fetchOptions) => fetchWithEvent(event, url, fetchOptions, {
+      event.fetch = (url, fetchOptions) => fetchWithEvent$1(event, url, fetchOptions, {
         fetch: useNitroApp().localFetch
       });
-      event.$fetch = (url, fetchOptions) => fetchWithEvent(event, url, fetchOptions, {
+      event.$fetch = (url, fetchOptions) => fetchWithEvent$1(event, url, fetchOptions, {
         fetch: globalThis.$fetch
       });
       event.waitUntil = incomingEvent.waitUntil;
@@ -3979,11 +4153,20 @@ function splitByCase(str, separators) {
   parts.push(buff);
   return parts;
 }
+function upperFirst(str) {
+  return str ? str[0].toUpperCase() + str.slice(1) : "";
+}
 function kebabCase(str, joiner) {
   return str ? (Array.isArray(str) ? str : splitByCase(str)).map((p) => p.toLowerCase()).join(joiner) : "";
 }
 function snakeCase(str) {
   return kebabCase(str || "", "_");
+}
+const titleCaseExceptions = /^(a|an|and|as|at|but|by|for|if|in|is|nor|of|on|or|the|to|with)$/i;
+function titleCase(str, opts) {
+  return (Array.isArray(str) ? str : splitByCase(str)).filter(Boolean).map(
+    (p) => titleCaseExceptions.test(p) ? p.toLowerCase() : upperFirst(p)
+  ).join(" ");
 }
 
 function getEnv(key, opts) {
@@ -4027,7 +4210,7 @@ function _expandFromEnv(value) {
 const _inlineRuntimeConfig = {
   "app": {
     "baseURL": "/",
-    "buildId": "de7eb1c8-e393-4c2b-b126-4b73f43aeba7",
+    "buildId": "e3b5d850-7328-4fd9-a95b-911db98ac516",
     "buildAssetsDir": "/_nuxt/",
     "cdnURL": ""
   },
@@ -4037,8 +4220,33 @@ const _inlineRuntimeConfig = {
       "/__nuxt_error": {
         "cache": false
       },
-      "/admin/**": {
-        "appMiddleware": []
+      "/_og/d/**": {
+        "headers": {
+          "cache-control": "public, max-age=259200, s-maxage=259200, immutable"
+        }
+      },
+      "/_og/r/**": {
+        "headers": {
+          "cache-control": "public, max-age=259200, s-maxage=259200, immutable"
+        }
+      },
+      "/_og/s/**": {
+        "headers": {
+          "cache-control": "public, max-age=31536000, immutable"
+        }
+      },
+      "/_nuxt": {
+        "robots": "noindex",
+        "headers": {
+          "X-Robots-Tag": "noindex"
+        }
+      },
+      "/_nuxt/**": {
+        "headers": {
+          "cache-control": "public, max-age=31536000, immutable",
+          "X-Robots-Tag": "noindex"
+        },
+        "robots": "noindex"
       },
       "/_nuxt/builds/meta/**": {
         "headers": {
@@ -4050,14 +4258,175 @@ const _inlineRuntimeConfig = {
           "cache-control": "public, max-age=1, immutable"
         }
       },
-      "/_nuxt/**": {
+      "/_og-static-fonts/**": {
         "headers": {
           "cache-control": "public, max-age=31536000, immutable"
         }
       }
     }
   },
-  "public": {}
+  "public": {
+    "sanityProjectId": "lskrikfb",
+    "sanityDataset": "production",
+    "nuxt-seo-utils-version": "8.5.0",
+    "seo-utils": {
+      "canonicalQueryWhitelist": [
+        "page",
+        "sort",
+        "filter",
+        "search",
+        "q",
+        "category",
+        "tag"
+      ],
+      "canonicalLowercase": true,
+      "automaticTwitterTags": true,
+      "tagPriority": "low",
+      "separator": "",
+      "titleSeparator": ""
+    },
+    "nuxt-robots": {
+      "version": "6.2.0",
+      "isNuxtContentV2": false,
+      "debug": false,
+      "credits": true,
+      "groups": [
+        {
+          "userAgent": [
+            "*"
+          ],
+          "disallow": [
+            ""
+          ],
+          "allow": [],
+          "contentUsage": [],
+          "contentSignal": [],
+          "_indexable": true,
+          "_rules": [],
+          "_normalized": true
+        }
+      ],
+      "sitemap": [
+        "/sitemap.xml"
+      ],
+      "header": true,
+      "robotsEnabledValue": "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+      "robotsDisabledValue": "noindex, nofollow",
+      "cacheControl": "max-age=14400, must-revalidate",
+      "botDetection": true,
+      "pageMetaRobots": {}
+    },
+    "nuxt-og-image": {
+      "defaults": {
+        "emojis": "noto",
+        "extension": "png",
+        "width": 1200,
+        "height": 600,
+        "cacheMaxAgeSeconds": 259200
+      },
+      "hasServerRuntime": true
+    }
+  },
+  "sanityApiToken": "",
+  "sitemap": {
+    "cacheMaxAgeSeconds": 600,
+    "debug": false
+  },
+  "nuxt-schema-org": {
+    "reactive": false,
+    "minify": true,
+    "scriptAttributes": {
+      "data-nuxt-schema-org": true
+    },
+    "identity": "",
+    "version": "6.3.1"
+  },
+  "nuxt-site-config": {
+    "stack": [
+      {
+        "_context": "system",
+        "_priority": -15,
+        "env": "production"
+      },
+      {
+        "_priority": -3,
+        "_context": "nuxt-site-config:config",
+        "url": "https://tevori-global.vercel.app",
+        "name": "PT Tevori Global Indonesia",
+        "description": "Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities.",
+        "defaultLocale": "en"
+      }
+    ],
+    "version": "4.2.3",
+    "debug": false,
+    "multiTenancy": []
+  },
+  "nuxt-robots": {
+    "version": "6.2.0",
+    "isNuxtContentV2": false,
+    "debug": false,
+    "credits": true,
+    "groups": [
+      {
+        "userAgent": [
+          "*"
+        ],
+        "disallow": [
+          ""
+        ],
+        "allow": [],
+        "contentUsage": [],
+        "contentSignal": [],
+        "_indexable": true,
+        "_rules": [],
+        "_normalized": true
+      }
+    ],
+    "sitemap": [
+      "/sitemap.xml"
+    ],
+    "header": true,
+    "robotsEnabledValue": "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+    "robotsDisabledValue": "noindex, nofollow",
+    "cacheControl": "max-age=14400, must-revalidate",
+    "botDetection": true,
+    "pageMetaRobots": {}
+  },
+  "nuxt-og-image": {
+    "version": "6.7.8",
+    "satoriOptions": {},
+    "resvgOptions": {},
+    "sharpOptions": {},
+    "publicStoragePath": "rootD::Samuel:Folder-Personal-Work:Folder-Web-Development:Company-Profile-PT-Tevori_Global:src:public",
+    "defaults": {
+      "emojis": "noto",
+      "extension": "png",
+      "width": 1200,
+      "height": 600,
+      "cacheMaxAgeSeconds": 259200
+    },
+    "debug": false,
+    "baseCacheKey": "/cache/nuxt-og-image/6.7.8",
+    "buildCacheDir": "",
+    "hasNuxtIcon": false,
+    "colorPreference": "light",
+    "isNuxtContentDocumentDriven": false,
+    "cssFramework": "tailwind",
+    "browser": "",
+    "security": {
+      "strict": false,
+      "maxDimension": 2048,
+      "maxDpr": 2,
+      "renderTimeout": 15000,
+      "imageFetchTimeout": 3000,
+      "maxQueryParamSize": "",
+      "restrictRuntimeImagesToOrigin": false,
+      "secret": "q5Z3OKmjodE9i81lD2Q6MvusMXXJ0nw1XaHQP1UOCXc"
+    }
+  },
+  "ogImage": {
+    "secret": ""
+  }
 };
 const envOptions = {
   prefix: "NITRO_",
@@ -4366,117 +4735,1619 @@ async function errorHandler(error, event) {
   // H3 will handle fallback
 }
 
-const plugins = [
-  
+function fetchWithEvent(event, request, options) {
+  return event.$fetch(request, options)
+}
+
+const _vjhEsKKZK2_IKqvIuT9GhbeyFRVSzRP04fRm8tsAZ8 = defineNitroPlugin((nitroApp) => {
+  return;
+});
+
+const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_$";
+const unsafeChars = /[<>\b\f\n\r\t\0\u2028\u2029]/g;
+const reserved = /^(?:do|if|in|for|int|let|new|try|var|byte|case|char|else|enum|goto|long|this|void|with|await|break|catch|class|const|final|float|short|super|throw|while|yield|delete|double|export|import|native|return|switch|throws|typeof|boolean|default|extends|finally|package|private|abstract|continue|debugger|function|volatile|interface|protected|transient|implements|instanceof|synchronized)$/;
+const escaped = {
+  "<": "\\u003C",
+  ">": "\\u003E",
+  "/": "\\u002F",
+  "\\": "\\\\",
+  "\b": "\\b",
+  "\f": "\\f",
+  "\n": "\\n",
+  "\r": "\\r",
+  "	": "\\t",
+  "\0": "\\0",
+  "\u2028": "\\u2028",
+  "\u2029": "\\u2029"
+};
+const objectProtoOwnPropertyNames = Object.getOwnPropertyNames(Object.prototype).sort().join("\0");
+function devalue(value) {
+  const counts = /* @__PURE__ */ new Map();
+  let logNum = 0;
+  function log(message) {
+    if (logNum < 100) {
+      console.warn(message);
+      logNum += 1;
+    }
+  }
+  function walk(thing) {
+    if (typeof thing === "function") {
+      log(`Cannot stringify a function ${thing.name}`);
+      return;
+    }
+    if (counts.has(thing)) {
+      counts.set(thing, counts.get(thing) + 1);
+      return;
+    }
+    counts.set(thing, 1);
+    if (!isPrimitive(thing)) {
+      const type = getType(thing);
+      switch (type) {
+        case "Number":
+        case "String":
+        case "Boolean":
+        case "Date":
+        case "RegExp":
+          return;
+        case "Array":
+          thing.forEach(walk);
+          break;
+        case "Set":
+        case "Map":
+          Array.from(thing).forEach(walk);
+          break;
+        default:
+          const proto = Object.getPrototypeOf(thing);
+          if (proto !== Object.prototype && proto !== null && Object.getOwnPropertyNames(proto).sort().join("\0") !== objectProtoOwnPropertyNames) {
+            if (typeof thing.toJSON !== "function") {
+              log(`Cannot stringify arbitrary non-POJOs ${thing.constructor.name}`);
+            }
+          } else if (Object.getOwnPropertySymbols(thing).length > 0) {
+            log(`Cannot stringify POJOs with symbolic keys ${Object.getOwnPropertySymbols(thing).map((symbol) => symbol.toString())}`);
+          } else {
+            Object.keys(thing).forEach((key) => walk(thing[key]));
+          }
+      }
+    }
+  }
+  walk(value);
+  const names = /* @__PURE__ */ new Map();
+  Array.from(counts).filter((entry) => entry[1] > 1).sort((a, b) => b[1] - a[1]).forEach((entry, i) => {
+    names.set(entry[0], getName(i));
+  });
+  function stringify(thing) {
+    if (names.has(thing)) {
+      return names.get(thing);
+    }
+    if (isPrimitive(thing)) {
+      return stringifyPrimitive(thing);
+    }
+    const type = getType(thing);
+    switch (type) {
+      case "Number":
+      case "String":
+      case "Boolean":
+        return `Object(${stringify(thing.valueOf())})`;
+      case "RegExp":
+        return thing.toString();
+      case "Date":
+        return `new Date(${thing.getTime()})`;
+      case "Array":
+        const members = thing.map((v, i) => i in thing ? stringify(v) : "");
+        const tail = thing.length === 0 || thing.length - 1 in thing ? "" : ",";
+        return `[${members.join(",")}${tail}]`;
+      case "Set":
+      case "Map":
+        return `new ${type}([${Array.from(thing).map(stringify).join(",")}])`;
+      default:
+        if (thing.toJSON) {
+          let json = thing.toJSON();
+          if (getType(json) === "String") {
+            try {
+              json = JSON.parse(json);
+            } catch (e) {
+            }
+          }
+          return stringify(json);
+        }
+        if (Object.getPrototypeOf(thing) === null) {
+          if (Object.keys(thing).length === 0) {
+            return "Object.create(null)";
+          }
+          return `Object.create(null,{${Object.keys(thing).map((key) => `${safeKey(key)}:{writable:true,enumerable:true,value:${stringify(thing[key])}}`).join(",")}})`;
+        }
+        return `{${Object.keys(thing).map((key) => `${safeKey(key)}:${stringify(thing[key])}`).join(",")}}`;
+    }
+  }
+  const str = stringify(value);
+  if (names.size) {
+    const params = [];
+    const statements = [];
+    const values = [];
+    names.forEach((name, thing) => {
+      params.push(name);
+      if (isPrimitive(thing)) {
+        values.push(stringifyPrimitive(thing));
+        return;
+      }
+      const type = getType(thing);
+      switch (type) {
+        case "Number":
+        case "String":
+        case "Boolean":
+          values.push(`Object(${stringify(thing.valueOf())})`);
+          break;
+        case "RegExp":
+          values.push(thing.toString());
+          break;
+        case "Date":
+          values.push(`new Date(${thing.getTime()})`);
+          break;
+        case "Array":
+          values.push(`Array(${thing.length})`);
+          thing.forEach((v, i) => {
+            statements.push(`${name}[${i}]=${stringify(v)}`);
+          });
+          break;
+        case "Set":
+          values.push("new Set");
+          statements.push(`${name}.${Array.from(thing).map((v) => `add(${stringify(v)})`).join(".")}`);
+          break;
+        case "Map":
+          values.push("new Map");
+          statements.push(`${name}.${Array.from(thing).map(([k, v]) => `set(${stringify(k)}, ${stringify(v)})`).join(".")}`);
+          break;
+        default:
+          values.push(Object.getPrototypeOf(thing) === null ? "Object.create(null)" : "{}");
+          Object.keys(thing).forEach((key) => {
+            statements.push(`${name}${safeProp(key)}=${stringify(thing[key])}`);
+          });
+      }
+    });
+    statements.push(`return ${str}`);
+    return `(function(${params.join(",")}){${statements.join(";")}}(${values.join(",")}))`;
+  } else {
+    return str;
+  }
+}
+function getName(num) {
+  let name = "";
+  do {
+    name = chars[num % chars.length] + name;
+    num = ~~(num / chars.length) - 1;
+  } while (num >= 0);
+  return reserved.test(name) ? `${name}0` : name;
+}
+function isPrimitive(thing) {
+  return Object(thing) !== thing;
+}
+function stringifyPrimitive(thing) {
+  if (typeof thing === "string") {
+    return stringifyString(thing);
+  }
+  if (thing === void 0) {
+    return "void 0";
+  }
+  if (thing === 0 && 1 / thing < 0) {
+    return "-0";
+  }
+  const str = String(thing);
+  if (typeof thing === "number") {
+    return str.replace(/^(-)?0\./, "$1.");
+  }
+  return str;
+}
+function getType(thing) {
+  return Object.prototype.toString.call(thing).slice(8, -1);
+}
+function escapeUnsafeChar(c) {
+  return escaped[c] || c;
+}
+function escapeUnsafeChars(str) {
+  return str.replace(unsafeChars, escapeUnsafeChar);
+}
+function safeKey(key) {
+  return /^[_$a-zA-Z][_$a-zA-Z0-9]*$/.test(key) ? key : escapeUnsafeChars(JSON.stringify(key));
+}
+function safeProp(key) {
+  return /^[_$a-zA-Z][_$a-zA-Z0-9]*$/.test(key) ? `.${key}` : `[${escapeUnsafeChars(JSON.stringify(key))}]`;
+}
+function stringifyString(str) {
+  let result = '"';
+  for (let i = 0; i < str.length; i += 1) {
+    const char = str.charAt(i);
+    const code = char.charCodeAt(0);
+    if (char === '"') {
+      result += '\\"';
+    } else if (char in escaped) {
+      result += escaped[char];
+    } else if (code >= 55296 && code <= 57343) {
+      const next = str.charCodeAt(i + 1);
+      if (code <= 56319 && (next >= 56320 && next <= 57343)) {
+        result += char + str[++i];
+      } else {
+        result += `\\u${code.toString(16).toUpperCase()}`;
+      }
+    } else {
+      result += char;
+    }
+  }
+  result += '"';
+  return result;
+}
+
+const SiteConfigPriority = {
+  nitro: -4,
+  runtime: 0
+};
+
+function toValue(source) {
+  if (typeof source === "function")
+    return source();
+  if (source && source.__v_isRef === true)
+    return source.value;
+  return source;
+}
+const NUXT_SITE_PREFIX = "NUXT_SITE_";
+const NUXT_PUBLIC_SITE_PREFIX = "NUXT_PUBLIC_SITE_";
+function envSiteConfig(env = {}) {
+  const config = {};
+  for (const key of Object.keys(env)) {
+    const prefixLength = key.startsWith(NUXT_SITE_PREFIX) ? NUXT_SITE_PREFIX.length : key.startsWith(NUXT_PUBLIC_SITE_PREFIX) ? NUXT_PUBLIC_SITE_PREFIX.length : 0;
+    if (!prefixLength)
+      continue;
+    const segments = key.slice(prefixLength).split("_");
+    let configKey = segments[0].toLowerCase();
+    for (let i = 1; i < segments.length; i++) {
+      const segment = segments[i];
+      configKey += segment[0]?.toUpperCase() + segment.slice(1).toLowerCase();
+    }
+    config[configKey] = env[key];
+  }
+  return config;
+}
+
+function normalizeSiteConfig(config) {
+  if (typeof config.indexable !== "undefined")
+    config.indexable = String(config.indexable) !== "false";
+  if (typeof config.trailingSlash !== "undefined" && !config.trailingSlash)
+    config.trailingSlash = String(config.trailingSlash) !== "false";
+  if (config.url && !hasProtocol(String(config.url), { acceptRelative: true, strict: false }))
+    config.url = withHttps(String(config.url));
+  const keys = Object.keys(config).sort((a, b) => a.localeCompare(b));
+  const newConfig = {};
+  for (const k of keys)
+    newConfig[k] = config[k];
+  return newConfig;
+}
+function createSiteConfigStack(options) {
+  const debug = options?.debug || false;
+  const stack = [];
+  function push(input) {
+    if (!input || typeof input !== "object" || Object.keys(input).length === 0) {
+      return () => {
+      };
+    }
+    if (!input._context && debug) {
+      let lastFunctionName = new Error("tmp").stack?.split("\n")[2]?.split(" ")[5];
+      if (lastFunctionName?.includes("/"))
+        lastFunctionName = "anonymous";
+      input._context = lastFunctionName;
+    }
+    const entry = {};
+    for (const k in input) {
+      const val = input[k];
+      if (typeof val !== "undefined" && val !== "")
+        entry[k] = val;
+    }
+    if (!Object.keys(entry).some((k) => !k.startsWith("_"))) {
+      return () => {
+      };
+    }
+    stack.push(entry);
+    return () => {
+      const idx = stack.indexOf(entry);
+      if (idx !== -1)
+        stack.splice(idx, 1);
+    };
+  }
+  function get(options2) {
+    const siteConfig = {};
+    if (options2?.debug)
+      siteConfig._context = {};
+    siteConfig._priority = {};
+    for (const o in stack.sort((a, b) => (a._priority || 0) - (b._priority || 0))) {
+      for (const k in stack[o]) {
+        const key = k;
+        const val = options2?.resolveRefs ? toValue(stack[o][k]) : stack[o][k];
+        if (!k.startsWith("_") && typeof val !== "undefined" && val !== "") {
+          siteConfig[k] = val;
+          if (typeof stack[o]._priority !== "undefined" && stack[o]._priority !== -1) {
+            siteConfig._priority[key] = stack[o]._priority;
+          }
+          if (options2?.debug)
+            siteConfig._context[key] = stack[o]._context?.[key] || stack[o]._context || "anonymous";
+        }
+      }
+    }
+    return options2?.skipNormalize ? siteConfig : normalizeSiteConfig(siteConfig);
+  }
+  return {
+    stack,
+    push,
+    get
+  };
+}
+
+function withoutQuery$1(path) {
+  const queryIndex = path.indexOf("?");
+  return queryIndex === -1 ? path : path.slice(0, queryIndex);
+}
+function createNitroRouteRuleMatcher$1(runtimeConfig) {
+  const { nitro, app } = runtimeConfig;
+  const baseURL = app?.baseURL || "/";
+  const _routeRulesMatcher = toRouteMatcher(
+    createRouter$1({
+      routes: Object.fromEntries(
+        Object.entries(nitro?.routeRules || {}).map(([path, rules]) => [withoutTrailingSlash(path), rules])
+      )
+    })
+  );
+  return (pathOrUrl) => {
+    const path = pathOrUrl[0] === "/" ? pathOrUrl : parseURL(pathOrUrl, baseURL).pathname;
+    return defu({}, ..._routeRulesMatcher.matchAll(
+      withoutBase(withoutTrailingSlash(withoutQuery$1(path)), baseURL)
+    ).reverse());
+  };
+}
+
+function getSiteRouteRules(event) {
+  const nitroRouteRules = getRouteRules(event);
+  const routeRules = nitroRouteRules;
+  return {
+    site: routeRules.site,
+    // Nitro 3 removes matched false rules, while Nuxt treats a missing ssr rule as no-SSR.
+    ssr: routeRules.ssr ?? false
+  };
+}
+
+function getSiteConfig(e, _options) {
+  e.context.siteConfig = e.context.siteConfig || createSiteConfigStack();
+  const options = defu(_options, useRuntimeConfig(e)["nuxt-site-config"], { debug: false });
+  return e.context.siteConfig.get(options);
+}
+
+const _af6_Ay9d6eP3_NOxWgNrabfwWmzpctGliTl7xIX6mk = defineNitroPlugin(async (nitroApp) => {
+  nitroApp.hooks.hook("render:html", async (ctx, { event }) => {
+    const routeOptions = getSiteRouteRules(event);
+    const isIsland = process.env.NUXT_COMPONENT_ISLANDS && event.path.startsWith("/__nuxt_island");
+    event.path;
+    const noSSR = !!process.env.NUXT_NO_SSR || event.context.nuxt?.noSSR || routeOptions.ssr === false && !isIsland || (false);
+    if (noSSR) {
+      const siteConfig = Object.fromEntries(
+        Object.entries(getSiteConfig(event)).map(([k, v]) => [k, toValue(v)])
+      );
+      ctx.body.push(`<script>window.__NUXT_SITE_CONFIG__=${devalue(siteConfig)}<\/script>`);
+    }
+  });
+});
+
+const KNOWN_SEARCH_BOTS = [
+  {
+    pattern: "googlebot",
+    name: "googlebot",
+    secondaryPatterns: ["google.com/bot.html"]
+  },
+  {
+    pattern: "bingbot",
+    name: "bingbot",
+    secondaryPatterns: ["msnbot"]
+  },
+  {
+    pattern: "yandexbot",
+    name: "yandexbot"
+  },
+  {
+    pattern: "baiduspider",
+    name: "baiduspider",
+    secondaryPatterns: ["baidu.com"]
+  },
+  {
+    pattern: "duckduckbot",
+    name: "duckduckbot",
+    secondaryPatterns: ["duckduckgo.com"]
+  },
+  {
+    pattern: "slurp",
+    name: "yahoo"
+  },
+  {
+    pattern: "applebot",
+    name: "applebot",
+    secondaryPatterns: ["apple.com/go/applebot"]
+  }
+];
+const SOCIAL_BOTS = [
+  {
+    pattern: "twitterbot",
+    name: "twitter",
+    secondaryPatterns: ["twitter"]
+  },
+  {
+    pattern: "facebookexternalhit",
+    name: "facebook",
+    secondaryPatterns: ["facebook.com"]
+  },
+  {
+    pattern: "linkedinbot",
+    name: "linkedin",
+    secondaryPatterns: ["linkedin"]
+  },
+  {
+    pattern: "pinterestbot",
+    name: "pinterest",
+    secondaryPatterns: ["pinterest"]
+  },
+  {
+    pattern: "discordbot",
+    name: "discord",
+    secondaryPatterns: ["discordapp"]
+  }
+];
+const SEO_BOTS = [
+  {
+    pattern: "mj12bot",
+    name: "majestic12",
+    secondaryPatterns: ["majestic12.co.uk/bot"]
+  },
+  {
+    pattern: "ahrefsbot",
+    name: "ahrefs",
+    secondaryPatterns: ["ahrefs.com"]
+  },
+  {
+    pattern: "semrushbot",
+    name: "semrush",
+    secondaryPatterns: ["semrush.com/bot"]
+  },
+  {
+    pattern: "screaming frog",
+    name: "screaming-frog",
+    secondaryPatterns: ["screamingfrog.co.uk"]
+  },
+  {
+    pattern: "rogerbot",
+    name: "moz"
+  }
+];
+const AI_BOTS = [
+  {
+    pattern: "anthropic",
+    name: "anthropic"
+  },
+  {
+    pattern: "claude",
+    name: "claude"
+  },
+  {
+    pattern: "gptbot",
+    name: "gpt",
+    secondaryPatterns: ["openai.com"]
+  },
+  {
+    pattern: "google-extended",
+    name: "google-extended"
+  },
+  {
+    pattern: "applebot-extended",
+    name: "applebot-extended"
+  },
+  {
+    pattern: "bytespider",
+    name: "bytespider"
+  },
+  {
+    pattern: "diffbot",
+    name: "diffbot"
+  },
+  {
+    pattern: "googlebot-news",
+    name: "google-news"
+  },
+  {
+    pattern: "cohere",
+    name: "cohere",
+    secondaryPatterns: ["cohere.com"]
+  },
+  {
+    pattern: "ccbot",
+    name: "commoncrawl",
+    secondaryPatterns: ["commoncrawl.org"]
+  },
+  {
+    pattern: "perplexitybot",
+    name: "perplexity",
+    secondaryPatterns: ["perplexity.ai"]
+  }
+];
+const HTTP_TOOL_BOTS = [
+  {
+    pattern: "python-requests",
+    name: "requests",
+    secondaryPatterns: ["python"]
+  },
+  {
+    pattern: "wget",
+    name: "wget"
+  },
+  {
+    pattern: "curl",
+    name: "curl",
+    secondaryPatterns: ["curl"]
+  }
+];
+const SECURITY_SCANNING_BOTS = [
+  {
+    pattern: "zgrab",
+    name: "zgrab"
+  },
+  {
+    pattern: "masscan",
+    name: "masscan"
+  },
+  {
+    pattern: "nmap",
+    name: "nmap",
+    secondaryPatterns: ["insecure.org"]
+  },
+  {
+    pattern: "nikto",
+    name: "nikto"
+  },
+  {
+    pattern: "wpscan",
+    name: "wpscan"
+  }
+];
+const SCRAPING_BOTS = [
+  {
+    pattern: "scrapy",
+    name: "scrapy",
+    secondaryPatterns: ["scrapy.org"]
+  }
+];
+const AUTOMATION_BOTS = [
+  {
+    pattern: "phantomjs",
+    name: "phantomjs"
+  },
+  {
+    pattern: "headless",
+    name: "headless-browser"
+  },
+  {
+    pattern: "playwright",
+    name: "playwright"
+  },
+  {
+    pattern: "selenium",
+    name: "selenium",
+    secondaryPatterns: ["webdriver"]
+  },
+  {
+    pattern: "puppeteer",
+    name: "puppeteer",
+    secondaryPatterns: ["headless"]
+  }
+];
+const GENERIC_BOTS = [
+  {
+    pattern: "bot",
+    name: "generic-bot"
+  },
+  {
+    pattern: "spider",
+    name: "generic-spider"
+  },
+  {
+    pattern: "crawler",
+    name: "generic-crawler"
+  },
+  {
+    pattern: "scraper",
+    name: "generic-scraper"
+  }
+];
+const BOT_MAP = [
+  {
+    type: "search-engine",
+    bots: KNOWN_SEARCH_BOTS,
+    trusted: true
+  },
+  {
+    type: "social",
+    bots: SOCIAL_BOTS,
+    trusted: true
+  },
+  {
+    type: "seo",
+    bots: SEO_BOTS,
+    trusted: true
+  },
+  {
+    type: "ai",
+    bots: AI_BOTS,
+    trusted: true
+  },
+  {
+    type: "generic",
+    bots: GENERIC_BOTS,
+    trusted: false
+  },
+  {
+    type: "automation",
+    bots: AUTOMATION_BOTS,
+    trusted: false
+  },
+  {
+    type: "http-tool",
+    bots: HTTP_TOOL_BOTS,
+    trusted: false
+  },
+  {
+    type: "security-scanner",
+    bots: SECURITY_SCANNING_BOTS,
+    trusted: false
+  },
+  {
+    type: "scraping",
+    bots: SCRAPING_BOTS,
+    trusted: false
+  }
 ];
 
-const assets = {
-  "/favicon.ico": {
-    "type": "image/vnd.microsoft.icon",
-    "etag": "\"10be-wGBe/tk27iYAKE5kgFIdBvpk+HI\"",
-    "mtime": "2026-09-02T10:27:20.092Z",
-    "size": 4286,
-    "path": "../public/favicon.ico"
-  },
-  "/admin/index.html": {
-    "type": "text/html; charset=utf-8",
-    "etag": "\"1bd-GBzgOp2Nsf9JUxl+JQ2Dht0FDnY\"",
-    "mtime": "2026-09-05T15:43:12.644Z",
-    "size": 445,
-    "path": "../public/admin/index.html"
-  },
-  "/_nuxt/BZIPNaiy.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"1805-fq13n8GTVxeKnvxPwARPKSO2e3s\"",
-    "mtime": "2026-09-06T11:46:24.876Z",
-    "size": 6149,
-    "path": "../public/_nuxt/BZIPNaiy.js"
-  },
-  "/_nuxt/entry.BpEWB7ed.css": {
-    "type": "text/css; charset=utf-8",
-    "etag": "\"8c92-OS/rCcIo0cw7Ymh0FWv/JEhKlEQ\"",
-    "mtime": "2026-09-06T11:46:24.882Z",
-    "size": 35986,
-    "path": "../public/_nuxt/entry.BpEWB7ed.css"
-  },
-  "/admin/config.yml": {
-    "type": "text/yaml; charset=utf-8",
-    "etag": "\"72f-BAHXUIOHf97TIBiCZoStTVK220U\"",
-    "mtime": "2026-09-06T11:19:03.043Z",
-    "size": 1839,
-    "path": "../public/admin/config.yml"
-  },
-  "/_nuxt/iQnG3LsI.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"3c7b-6iWACnLM3uftbyK5IvLX9SCIrVI\"",
-    "mtime": "2026-09-06T11:46:24.878Z",
-    "size": 15483,
-    "path": "../public/_nuxt/iQnG3LsI.js"
-  },
-  "/_nuxt/BVi-EM12.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"5d5-isbO4DY8X+MfEBJGSiQW5gNm3Y8\"",
-    "mtime": "2026-09-06T11:46:24.875Z",
-    "size": 1493,
-    "path": "../public/_nuxt/BVi-EM12.js"
-  },
-  "/_nuxt/CnZNSCh1.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"434-kslefR6GEDpoQT+kTqAwBINGUx8\"",
-    "mtime": "2026-09-06T11:46:24.877Z",
-    "size": 1076,
-    "path": "../public/_nuxt/CnZNSCh1.js"
-  },
-  "/_nuxt/_slug_.C24noBk8.css": {
-    "type": "text/css; charset=utf-8",
-    "etag": "\"a9-yHqxuuQsBeEMxsal5jU1ORNTeOE\"",
-    "mtime": "2026-09-06T11:46:24.881Z",
-    "size": 169,
-    "path": "../public/_nuxt/_slug_.C24noBk8.css"
-  },
-  "/_nuxt/builds/latest.json": {
-    "type": "application/json",
-    "etag": "\"47-NdoxbZ1/YRtVMFrtDyKSlsL2vyY\"",
-    "mtime": "2026-09-06T11:46:28.312Z",
-    "size": 71,
-    "path": "../public/_nuxt/builds/latest.json"
-  },
-  "/images/uploads/.gitkeep": {
-    "type": "text/plain; charset=utf-8",
-    "etag": "\"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk\"",
-    "mtime": "2026-09-05T14:18:29.834Z",
-    "size": 0,
-    "path": "../public/images/uploads/.gitkeep"
-  },
-  "/_nuxt/builds/meta/de7eb1c8-e393-4c2b-b126-4b73f43aeba7.json": {
-    "type": "application/json",
-    "etag": "\"58-vSARIphbJcLXW3IICliVxjloPmg\"",
-    "mtime": "2026-09-06T11:46:28.314Z",
-    "size": 88,
-    "path": "../public/_nuxt/builds/meta/de7eb1c8-e393-4c2b-b126-4b73f43aeba7.json"
-  },
-  "/_nuxt/kTNrHbGN.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"856-JEs9uWxK+hvE8JaATA3y1T+zoQY\"",
-    "mtime": "2026-09-06T11:46:24.880Z",
-    "size": 2134,
-    "path": "../public/_nuxt/kTNrHbGN.js"
-  },
-  "/_nuxt/WsBe7rex.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"fe8-65TTW13aV7uqNIVWC67EmKpdshw\"",
-    "mtime": "2026-09-06T11:46:24.878Z",
-    "size": 4072,
-    "path": "../public/_nuxt/WsBe7rex.js"
-  },
-  "/_nuxt/x9qapDl1.js": {
-    "type": "text/javascript; charset=utf-8",
-    "etag": "\"2ef2c-FGZeN+2C8jHh2nD95xyvJF+evlw\"",
-    "mtime": "2026-09-06T11:46:24.874Z",
-    "size": 192300,
-    "path": "../public/_nuxt/x9qapDl1.js"
-  }
+const ROBOT_DIRECTIVE_VALUES = {
+  // Standard directives
+  enabled: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1",
+  disabled: "noindex, nofollow",
+  index: "index",
+  noindex: "noindex",
+  follow: "follow",
+  nofollow: "nofollow",
+  none: "none",
+  all: "all",
+  // Non-standard directives (not part of official robots spec)
+  noai: "noai",
+  noimageai: "noimageai"
 };
+function formatMaxImagePreview(value) {
+  return `max-image-preview:${value}`;
+}
+function formatMaxSnippet(value) {
+  return `max-snippet:${value}`;
+}
+function formatMaxVideoPreview(value) {
+  return `max-video-preview:${value}`;
+}
+function matches(pattern, path) {
+  const pathLength = path.length;
+  const patternLength = pattern.length;
+  const matchingLengths = Array.from({ length: pathLength + 1 }).fill(0);
+  let numMatchingLengths = 1;
+  let p = 0;
+  while (p < patternLength) {
+    if (pattern[p] === "$" && p + 1 === patternLength) {
+      return matchingLengths[numMatchingLengths - 1] === pathLength;
+    }
+    if (pattern[p] === "*") {
+      numMatchingLengths = pathLength - matchingLengths[0] + 1;
+      for (let i = 1; i < numMatchingLengths; i++) {
+        matchingLengths[i] = matchingLengths[i - 1] + 1;
+      }
+    } else {
+      let numMatches = 0;
+      for (let i = 0; i < numMatchingLengths; i++) {
+        const matchLength = matchingLengths[i];
+        if (matchLength < pathLength && path[matchLength] === pattern[p]) {
+          matchingLengths[numMatches++] = matchLength + 1;
+        }
+      }
+      if (numMatches === 0) {
+        return false;
+      }
+      numMatchingLengths = numMatches;
+    }
+    p++;
+  }
+  return true;
+}
+function matchPathToRule(path, _rules) {
+  let matchedRule = null;
+  const rules = _rules.filter(Boolean);
+  const rulesLength = rules.length;
+  let i = 0;
+  while (i < rulesLength) {
+    const rule = rules[i];
+    if (!rule || !matches(rule.pattern, path)) {
+      i++;
+      continue;
+    }
+    if (!matchedRule || rule.pattern.length > matchedRule.pattern.length) {
+      matchedRule = rule;
+    } else if (rule.pattern.length === matchedRule.pattern.length && rule.allow && !matchedRule.allow) {
+      matchedRule = rule;
+    }
+    i++;
+  }
+  return matchedRule;
+}
+function asArray(v) {
+  return typeof v === "undefined" ? [] : Array.isArray(v) ? v : [v];
+}
+function contentUsageToString(prefs) {
+  return Object.entries(prefs).filter(([_, value]) => value !== void 0).map(([key, value]) => `${key}=${value}`).join(", ");
+}
+function normalizeContentPreferences(value) {
+  if (!value)
+    return [];
+  if (Array.isArray(value))
+    return value.filter((rule) => Boolean(rule));
+  if (typeof value === "object" && !Array.isArray(value)) {
+    const str = contentUsageToString(value);
+    return str ? [str] : [];
+  }
+  if (typeof value === "string")
+    return value ? [value] : [];
+  return [];
+}
+function normalizeGroup(group) {
+  if (group._normalized) {
+    const resolvedGroup = group;
+    const disallow2 = asArray(resolvedGroup.disallow);
+    resolvedGroup._indexable = !disallow2.includes("/");
+    resolvedGroup._rules = [
+      ...resolvedGroup.disallow.filter(Boolean).map((r) => ({ pattern: r, allow: false })),
+      ...resolvedGroup.allow.map((r) => ({ pattern: r, allow: true }))
+    ];
+    return resolvedGroup;
+  }
+  const disallow = asArray(group.disallow);
+  const allow = asArray(group.allow).filter((rule) => Boolean(rule));
+  const contentUsage = normalizeContentPreferences(group.contentUsage);
+  const contentSignal = normalizeContentPreferences(group.contentSignal);
+  return {
+    ...group,
+    userAgent: group.userAgent ? asArray(group.userAgent) : ["*"],
+    disallow,
+    allow,
+    contentUsage,
+    contentSignal,
+    _indexable: !disallow.includes("/"),
+    _rules: [
+      ...disallow.filter(Boolean).map((r) => ({ pattern: r, allow: false })),
+      ...allow.map((r) => ({ pattern: r, allow: true }))
+    ],
+    _normalized: true
+  };
+}
+function generateRobotsTxt({ groups, sitemaps }) {
+  const lines = [];
+  for (const group of groups) {
+    for (const comment of group.comment || [])
+      lines.push(`# ${comment}`);
+    for (const userAgent of group.userAgent || ["*"])
+      lines.push(`User-agent: ${userAgent}`);
+    for (const allow of group.allow || [])
+      lines.push(`Allow: ${allow}`);
+    for (const disallow of group.disallow || [])
+      lines.push(`Disallow: ${disallow}`);
+    for (const cleanParam of group.cleanParam || [])
+      lines.push(`Clean-param: ${cleanParam}`);
+    for (const contentUsage of group.contentUsage || [])
+      lines.push(`Content-Usage: ${contentUsage}`);
+    for (const contentSignal of group.contentSignal || [])
+      lines.push(`Content-Signal: ${contentSignal}`);
+    lines.push("");
+  }
+  for (const sitemap of sitemaps)
+    lines.push(`Sitemap: ${sitemap}`);
+  return lines.join("\n");
+}
+function createPatternMap() {
+  const patternMap = /* @__PURE__ */ new Map();
+  for (const def of BOT_MAP) {
+    for (const bot of def.bots) {
+      const patterns = [bot.pattern, ...bot.secondaryPatterns || []];
+      for (const pattern of patterns) {
+        patternMap.set(pattern.toLowerCase(), {
+          botName: bot.name,
+          botCategory: def.type,
+          trusted: def.trusted
+        });
+      }
+    }
+  }
+  return patternMap;
+}
+function robotsDirectivesFromObject(obj) {
+  const directives = [];
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === false || value === null || value === void 0)
+      continue;
+    if (key in ROBOT_DIRECTIVE_VALUES && typeof value === "boolean" && value) {
+      directives.push(ROBOT_DIRECTIVE_VALUES[key]);
+    } else if (key === "max-image-preview" && typeof value === "string") {
+      directives.push(formatMaxImagePreview(value));
+    } else if (key === "max-snippet" && typeof value === "number") {
+      directives.push(formatMaxSnippet(value));
+    } else if (key === "max-video-preview" && typeof value === "number") {
+      directives.push(formatMaxVideoPreview(value));
+    }
+  }
+  return directives;
+}
+function normaliseRobotsRouteRule(config) {
+  if (!config)
+    return void 0;
+  let allow;
+  if (typeof config.robots === "boolean")
+    allow = config.robots;
+  else if (typeof config.robots === "object" && "indexable" in config.robots && typeof config.robots.indexable !== "undefined")
+    allow = config.robots.indexable;
+  let rule;
+  if (typeof config.robots === "object" && config.robots !== null) {
+    if ("rule" in config.robots && typeof config.robots.rule !== "undefined") {
+      rule = config.robots.rule;
+    } else if (!("indexable" in config.robots)) {
+      const directives = robotsDirectivesFromObject(config.robots);
+      if (directives.length > 0) {
+        rule = directives.join(", ");
+      }
+    }
+  } else if (typeof config.robots === "string") {
+    rule = config.robots;
+  }
+  if (rule && typeof allow === "undefined") {
+    const disallowIndicators = ["none", "noindex", "noai", "noimageai"];
+    allow = !disallowIndicators.some(
+      (indicator) => rule === indicator || rule.split(",").some((part) => part.trim() === indicator)
+    );
+  }
+  if (typeof allow === "undefined" && typeof rule === "undefined")
+    return;
+  return {
+    allow,
+    rule
+  };
+}
+
+function useRuntimeConfigNuxtRobots(event) {
+  return useRuntimeConfig(event)["nuxt-robots"];
+}
+
+function parseSerializedRegExp(value) {
+  const lastSlash = value.lastIndexOf("/");
+  return new RegExp(value.slice(1, lastSlash), value.slice(lastSlash + 1));
+}
+function deserializeFilters(filters) {
+  return filters.map((filter) => {
+    if (filter instanceof RegExp || typeof filter === "string")
+      return filter;
+    if (typeof filter.regex === "string")
+      return parseSerializedRegExp(filter.regex);
+    if (typeof filter.source === "string")
+      return new RegExp(filter.source, filter.flags || "");
+    return filter;
+  });
+}
+function createFilter(options = {}) {
+  const include = deserializeFilters(options.include || []);
+  const exclude = deserializeFilters(options.exclude || []);
+  if (include.length === 0 && exclude.length === 0)
+    return () => true;
+  const excludeRegex = exclude.filter((r) => r instanceof RegExp);
+  const includeRegex = include.filter((r) => r instanceof RegExp);
+  const excludeStrings = exclude.filter((r) => typeof r === "string");
+  const includeStrings = include.filter((r) => typeof r === "string");
+  const excludeMatcher = excludeStrings.length > 0 ? toRouteMatcher(createRouter$1({
+    routes: Object.fromEntries(excludeStrings.map((r) => [r, true])),
+    strictTrailingSlash: false
+  })) : null;
+  const includeMatcher = includeStrings.length > 0 ? toRouteMatcher(createRouter$1({
+    routes: Object.fromEntries(includeStrings.map((r) => [r, true])),
+    strictTrailingSlash: false
+  })) : null;
+  const excludeExact = new Set(excludeStrings);
+  const includeExact = new Set(includeStrings);
+  return function(path) {
+    if (excludeRegex.some((r) => r.test(path)))
+      return false;
+    if (excludeExact.has(path))
+      return false;
+    if (excludeMatcher && excludeMatcher.matchAll(path).length > 0)
+      return false;
+    if (includeRegex.some((r) => r.test(path)))
+      return true;
+    if (includeExact.has(path))
+      return true;
+    if (includeMatcher && includeMatcher.matchAll(path).length > 0)
+      return true;
+    return include.length === 0;
+  };
+}
+function createModuleLogger(tag, debug) {
+  return createConsola({ level: 3, defaults: { tag } });
+}
+
+const logger$3 = createModuleLogger("@nuxtjs/robots");
+
+async function resolveRobotsTxtContext(e, nitro = useNitroApp()) {
+  const { groups, sitemap: sitemaps } = useRuntimeConfigNuxtRobots(e);
+  const generateRobotsTxtCtx = {
+    event: e,
+    context: e ? "robots.txt" : "init",
+    errors: [],
+    warnings: [],
+    ...JSON.parse(JSON.stringify({ groups, sitemaps }))
+  };
+  await nitro.hooks.callHook("robots:config", generateRobotsTxtCtx);
+  generateRobotsTxtCtx.groups = generateRobotsTxtCtx.groups.map(normalizeGroup);
+  nitro._robots.ctx = generateRobotsTxtCtx;
+  return generateRobotsTxtCtx;
+}
+
+const _QKrvezTIjl6eFBfDf18DFW0n96cjskHZ1kRfjYgjPFw = defineNitroPlugin(async (nitroApp) => {
+  const { isNuxtContentV2, robotsDisabledValue, botDetection } = useRuntimeConfigNuxtRobots();
+  if (botDetection !== false) {
+    nitroApp._robotsPatternMap = createPatternMap();
+  }
+  nitroApp._robots = {};
+  await resolveRobotsTxtContext(void 0, nitroApp);
+  const nuxtContentUrls = /* @__PURE__ */ new Set();
+  if (isNuxtContentV2) {
+    let urls;
+    try {
+      urls = await (await nitroApp.localFetch("/__robots__/nuxt-content.json", {})).json();
+    } catch (e) {
+      logger$3.error("Failed to read robot rules from content files.", e);
+    }
+    if (urls && Array.isArray(urls) && urls.length) {
+      urls.forEach((url) => nuxtContentUrls.add(withoutTrailingSlash(url)));
+    }
+  }
+  if (nuxtContentUrls.size) {
+    nitroApp._robots.nuxtContentUrls = nuxtContentUrls;
+  }
+});
+
+const DRIVER_NAME = "lru-cache";
+const lruCacheDriver = defineDriver((opts = {}) => {
+  const cache = new LRUCache({
+    max: 1e3,
+    sizeCalculation: opts.maxSize || opts.maxEntrySize ? (value, key) => {
+      return key.length + byteLength(value);
+    } : void 0,
+    ...opts
+  });
+  return {
+    name: DRIVER_NAME,
+    options: opts,
+    getInstance: () => cache,
+    hasItem(key) {
+      return cache.has(key);
+    },
+    getItem(key) {
+      return cache.get(key) ?? null;
+    },
+    getItemRaw(key) {
+      return cache.get(key) ?? null;
+    },
+    setItem(key, value) {
+      cache.set(key, value);
+    },
+    setItemRaw(key, value) {
+      cache.set(key, value);
+    },
+    removeItem(key) {
+      cache.delete(key);
+    },
+    getKeys() {
+      return [...cache.keys()];
+    },
+    clear() {
+      cache.clear();
+    },
+    dispose() {
+      cache.clear();
+    }
+  };
+});
+function byteLength(value) {
+  if (typeof Buffer !== "undefined") {
+    try {
+      return Buffer.byteLength(value);
+    } catch {
+    }
+  }
+  try {
+    return typeof value === "string" ? value.length : JSON.stringify(value).length;
+  } catch {
+  }
+  return 0;
+}
+
+const htmlPayloadCache = createStorage({
+  // short cache time so we don't need many entries at runtime
+  driver: lruCacheDriver({ max: 50 })
+});
+const emojiCache = createStorage({
+  driver: lruCacheDriver({ max: 1e3 })
+});
+class BoundedMap {
+  constructor(max) {
+    this.max = max;
+  }
+  map = /* @__PURE__ */ new Map();
+  get(key) {
+    return this.map.get(key);
+  }
+  set(key, value) {
+    if (this.map.size >= this.max)
+      this.map.delete(this.map.keys().next().value);
+    this.map.set(key, value);
+  }
+}
+const fontCache = new BoundedMap(100);
+const fontArrayCache = new BoundedMap(20);
+
+const FILE_EXT_RE = /\.[0-9a-z]+$/i;
+function resolveSitePath(pathOrUrl, options) {
+  let path = pathOrUrl;
+  if (hasProtocol(pathOrUrl, { strict: false, acceptRelative: true })) {
+    const parsed = parseURL(pathOrUrl);
+    path = parsed.pathname;
+  }
+  const base = withLeadingSlash(options.base || "/");
+  if (base !== "/" && path.startsWith(base)) {
+    path = path.slice(base.length);
+  }
+  let origin = withoutTrailingSlash(options.absolute ? options.siteUrl : "");
+  if (base !== "/" && origin.endsWith(base)) {
+    origin = origin.slice(0, origin.indexOf(base));
+  }
+  const baseWithOrigin = options.withBase ? withBase(base, origin || "/") : origin;
+  const resolvedUrl = withBase(path, baseWithOrigin);
+  return path === "/" && !options.withBase ? withTrailingSlash(resolvedUrl) : fixSlashes(options.trailingSlash, resolvedUrl);
+}
+const fileExtensions = [
+  // Images
+  "jpg",
+  "jpeg",
+  "png",
+  "gif",
+  "bmp",
+  "webp",
+  "svg",
+  "ico",
+  // Documents
+  "pdf",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "ppt",
+  "pptx",
+  "txt",
+  "md",
+  "markdown",
+  // Archives
+  "zip",
+  "rar",
+  "7z",
+  "tar",
+  "gz",
+  // Audio
+  "mp3",
+  "wav",
+  "flac",
+  "ogg",
+  "opus",
+  "m4a",
+  "aac",
+  "midi",
+  "mid",
+  // Video
+  "mp4",
+  "avi",
+  "mkv",
+  "mov",
+  "wmv",
+  "flv",
+  "webm",
+  // Web
+  "html",
+  "css",
+  "js",
+  "json",
+  "xml",
+  "tsx",
+  "jsx",
+  "ts",
+  "vue",
+  "svelte",
+  "xsl",
+  "rss",
+  "atom",
+  // Programming
+  "php",
+  "py",
+  "rb",
+  "java",
+  "c",
+  "cpp",
+  "h",
+  "go",
+  // Data formats
+  "csv",
+  "tsv",
+  "sql",
+  "yaml",
+  "yml",
+  // Fonts
+  "woff",
+  "woff2",
+  "ttf",
+  "otf",
+  "eot",
+  // Executables/Binaries
+  "exe",
+  "msi",
+  "apk",
+  "ipa",
+  "dmg",
+  "iso",
+  "bin",
+  // Scripts/Config
+  "bat",
+  "cmd",
+  "sh",
+  "env",
+  "htaccess",
+  "conf",
+  "toml",
+  "ini",
+  // Package formats
+  "deb",
+  "rpm",
+  "jar",
+  "war",
+  // E-books
+  "epub",
+  "mobi",
+  // Common temporary/backup files
+  "log",
+  "tmp",
+  "bak",
+  "old",
+  "sav"
+];
+function isPathFile(path) {
+  const lastSegment = path.split("/").pop();
+  const ext = (lastSegment || path).match(FILE_EXT_RE)?.[0];
+  return !!(ext && fileExtensions.includes(ext.replace(".", "")));
+}
+function fixSlashes(trailingSlash, pathOrUrl) {
+  const $url = parseURL(pathOrUrl);
+  if (isPathFile($url.pathname))
+    return pathOrUrl;
+  const fixedPath = trailingSlash ? withTrailingSlash($url.pathname) : withoutTrailingSlash($url.pathname);
+  return `${$url.protocol ? `${$url.protocol}//` : ""}${$url.host || ""}${fixedPath}${$url.search || ""}${$url.hash || ""}`;
+}
+
+const e=globalThis.process?.env||Object.create(null),t=globalThis.process||{env:e},n=t!==void 0&&t.env&&t.env.NODE_ENV||void 0,r=[[`claude`,[`CLAUDECODE`,`CLAUDE_CODE`]],[`replit`,[`REPL_ID`]],[`gemini`,[`GEMINI_CLI`]],[`codex`,[`CODEX_SANDBOX`,`CODEX_THREAD_ID`]],[`opencode`,[`OPENCODE`]],[`pi`,[i(`PATH`,/\.pi[\\/]agent/)]],[`auggie`,[`AUGMENT_AGENT`]],[`goose`,[`GOOSE_PROVIDER`]],[`junie`,[`JUNIE_DATA`,`JUNIE_SHIM_PATH`]],[`devin`,[i(`EDITOR`,/devin/)]],[`cursor`,[`CURSOR_AGENT`]],[`kiro`,[i(`TERM_PROGRAM`,/kiro/,{noTTY:true})]]];function i(n,r,i){return ()=>{if(i?.noTTY&&t.stdout?.isTTY)return  false;let a=e[n];return a?r.test(a):false}}function a(){let t=e.AI_AGENT;if(t)return {name:t.toLowerCase()};for(let[t,n]of r)for(let r of n)if(typeof r==`string`?e[r]:r())return {name:t};return {}}const o=a();o.name;!!o.name;const l=[[`APPVEYOR`],[`AWS_AMPLIFY`,`AWS_APP_ID`,{ci:true}],[`AZURE_PIPELINES`,`SYSTEM_TEAMFOUNDATIONCOLLECTIONURI`],[`AZURE_STATIC`,`INPUT_AZURE_STATIC_WEB_APPS_API_TOKEN`],[`APPCIRCLE`,`AC_APPCIRCLE`],[`BAMBOO`,`bamboo_planKey`],[`BITBUCKET`,`BITBUCKET_COMMIT`],[`BITRISE`,`BITRISE_IO`],[`BUDDY`,`BUDDY_WORKSPACE_ID`],[`BUILDKITE`],[`CIRCLE`,`CIRCLECI`],[`CIRRUS`,`CIRRUS_CI`],[`CLOUDFLARE_PAGES`,`CF_PAGES`,{ci:true}],[`CLOUDFLARE_WORKERS`,`WORKERS_CI`,{ci:true}],[`GOOGLE_CLOUDRUN`,`K_SERVICE`],[`GOOGLE_CLOUDRUN_JOB`,`CLOUD_RUN_JOB`],[`CODEBUILD`,`CODEBUILD_BUILD_ARN`],[`CODEFRESH`,`CF_BUILD_ID`],[`DRONE`],[`DRONE`,`DRONE_BUILD_EVENT`],[`DSARI`],[`GITHUB_ACTIONS`],[`GITLAB`,`GITLAB_CI`],[`GITLAB`,`CI_MERGE_REQUEST_ID`],[`GOCD`,`GO_PIPELINE_LABEL`],[`LAYERCI`],[`JENKINS`,`JENKINS_URL`],[`HUDSON`,`HUDSON_URL`],[`MAGNUM`],[`NETLIFY`],[`NETLIFY`,`NETLIFY_LOCAL`,{ci:false}],[`NEVERCODE`],[`RENDER`],[`SAIL`,`SAILCI`],[`SEMAPHORE`],[`SCREWDRIVER`],[`SHIPPABLE`],[`SOLANO`,`TDDIUM`],[`STRIDER`],[`TEAMCITY`,`TEAMCITY_VERSION`],[`TRAVIS`],[`VERCEL`,`NOW_BUILDER`],[`VERCEL`,`VERCEL`,{ci:false}],[`VERCEL`,`VERCEL_ENV`,{ci:false}],[`APPCENTER`,`APPCENTER_BUILD_ID`],[`CODESANDBOX`,`CODESANDBOX_SSE`,{ci:false}],[`CODESANDBOX`,`CODESANDBOX_HOST`,{ci:false}],[`STACKBLITZ`],[`STORMKIT`],[`CLEAVR`],[`ZEABUR`],[`CODESPHERE`,`CODESPHERE_APP_ID`,{ci:true}],[`RAILWAY`,`RAILWAY_PROJECT_ID`],[`RAILWAY`,`RAILWAY_SERVICE_ID`],[`DENO-DEPLOY`,`DENO_DEPLOY`],[`DENO-DEPLOY`,`DENO_DEPLOYMENT_ID`],[`FIREBASE_APP_HOSTING`,`FIREBASE_APP_HOSTING`,{ci:true}],[`EDGEONE_PAGES`,`EO_PAGES_CI`,{ci:true}]];function u(){for(let t of l)if(e[t[1]||t[0]])return {name:t[0].toLowerCase(),...t[2]};return e.SHELL===`/bin/jsh`&&t.versions?.webcontainer?{name:`stackblitz`,ci:false}:{name:``,ci:false}}const d=u();d.name;const p=t.platform||``,m=!!e.CI||d.ci!==false,h=!!t.stdout?.isTTY;!!e.DEBUG;const v=n===`test`||!!e.TEST;n===`production`||e.MODE===`production`;const b=n===`dev`||n===`development`||e.MODE===`development`;!!e.MINIMAL||m||v||!h;const S=/^win/i.test(p);!e.NO_COLOR&&(!!e.FORCE_COLOR||(h||S)&&e.TERM!==`dumb`||m);const E=(t.versions?.node||``).replace(/^v/,``)||null;Number(E?.split(`.`)[0])||null;const O=!!t?.versions?.node,k=`Bun`in globalThis,A=`Deno`in globalThis,j=`fastly`in globalThis,M=`Netlify`in globalThis,N=`EdgeRuntime`in globalThis,P=globalThis.navigator?.userAgent===`Cloudflare-Workers`,F=[[M,`netlify`],[N,`edge-light`],[P,`workerd`],[j,`fastly`],[A,`deno`],[k,`bun`],[O,`node`]];function I(){let e=F.find(e=>e[0]);if(e)return {name:e[1]}}const L=I();L?.name||``;
+
+const PROTOCOL_RE = /^https?:\/\//;
+const TRAILING_SLASH_RE = /\/$/;
+function isLocalhostHost(host) {
+  if (!host || host.startsWith("localhost") || host.startsWith("127.") || host.startsWith("0.0.0.0"))
+    return true;
+  const hostname = host.startsWith("[") ? host.slice(0, host.indexOf("]") + 1) : host;
+  return hostname === "[::1]" || hostname === "::1" || hostname === "[::]" || hostname === "::";
+}
+function extractHostname(host) {
+  if (host.startsWith("[")) {
+    const close = host.indexOf("]");
+    return close !== -1 ? host.slice(0, close + 1) : host;
+  }
+  const colonCount = host.split(":").length - 1;
+  return colonCount === 1 ? host.slice(0, host.indexOf(":")) : host;
+}
+function splitHostPort(host) {
+  if (host.startsWith("[")) {
+    const close = host.indexOf("]");
+    const hostname = close !== -1 ? host.slice(0, close + 1) : host;
+    const port = close !== -1 && host[close + 1] === ":" ? host.slice(close + 2) : "";
+    const normalized = hostname === "[::1]" || hostname === "[::]" ? "localhost" : hostname;
+    return { host: normalized, port };
+  }
+  if (host === "0.0.0.0" || host.startsWith("0.0.0.0:")) {
+    const i = host.indexOf(":");
+    return { host: "localhost", port: i !== -1 ? host.slice(i + 1) : "" };
+  }
+  const colonCount = host.split(":").length - 1;
+  if (colonCount === 1) {
+    const i = host.indexOf(":");
+    return { host: host.slice(0, i), port: host.slice(i + 1) };
+  }
+  if (colonCount > 1) {
+    const normalized = host === "::1" || host === "::" ? "localhost" : `[${host}]`;
+    return { host: normalized, port: "" };
+  }
+  return { host, port: "" };
+}
+function getNitroOrigin$1(ctx = {}) {
+  const isDev = ctx.isDev ?? b;
+  const isPrerender = ctx.isPrerender ?? false;
+  let host = "";
+  let port = "";
+  let protocol = process.env.NITRO_SSL_CERT && process.env.NITRO_SSL_KEY ? "https" : "http";
+  if (isDev || isPrerender) {
+    const devEnv = process.env.__NUXT_DEV__ || process.env.NUXT_VITE_NODE_OPTIONS;
+    if (devEnv) {
+      const parsed = JSON.parse(devEnv);
+      const origin = parsed.proxy?.url || parsed.baseURL?.replace("/__nuxt_vite_node__", "");
+      host = origin.replace(PROTOCOL_RE, "").replace(TRAILING_SLASH_RE, "");
+      protocol = origin.startsWith("https") ? "https" : "http";
+    }
+  }
+  if (isDev && isLocalhostHost(host) && ctx.requestHost) {
+    const reqHost = extractHostname(ctx.requestHost);
+    if (reqHost && !isLocalhostHost(reqHost)) {
+      host = ctx.requestHost;
+      protocol = ctx.requestProtocol || protocol;
+    }
+  }
+  if (!host && ctx.requestHost) {
+    host = ctx.requestHost;
+    protocol = ctx.requestProtocol || protocol;
+  }
+  if (!host) {
+    host = process.env.NITRO_HOST || process.env.HOST || "";
+    if (isDev)
+      port = process.env.NITRO_PORT || process.env.PORT || "3000";
+  }
+  const split = splitHostPort(host);
+  host = split.host;
+  if (split.port)
+    port = split.port;
+  host = process.env.NUXT_SITE_HOST_OVERRIDE || host;
+  port = process.env.NUXT_SITE_PORT_OVERRIDE || port;
+  if (host.startsWith("http://") || host.startsWith("https://")) {
+    protocol = host.startsWith("https://") ? "https" : "http";
+    host = host.replace(PROTOCOL_RE, "");
+  } else if (!isDev && (!host || !isLocalhostHost(host))) {
+    protocol = "https";
+  }
+  return `${protocol}://${host}${port ? `:${port}` : ""}/`;
+}
+
+function getNitroOrigin(e) {
+  return getNitroOrigin$1({
+    isDev: false,
+    isPrerender: false,
+    requestHost: e ? getRequestHost(e, { xForwardedHost: true }) : void 0,
+    requestProtocol: e ? getRequestProtocol(e, { xForwardedProto: true }) : void 0
+  });
+}
+
+function createSitePathResolver(e, options = {}) {
+  const siteConfig = getSiteConfig(e);
+  const nitroOrigin = getNitroOrigin(e);
+  const nuxtBase = useRuntimeConfig(e).app.baseURL || "/";
+  return (path) => {
+    return resolveSitePath(path, {
+      ...options,
+      siteUrl: options.canonical !== false || false ? siteConfig.url : nitroOrigin,
+      trailingSlash: siteConfig.trailingSlash,
+      base: nuxtBase
+    });
+  };
+}
+function withSiteUrl(e, path, options = {}) {
+  const siteConfig = e.context.siteConfig?.get();
+  let siteUrl = e.context.siteConfigNitroOrigin;
+  if ((options.canonical !== false || false) && siteConfig.url)
+    siteUrl = siteConfig.url;
+  return resolveSitePath(path, {
+    absolute: true,
+    siteUrl,
+    trailingSlash: siteConfig.trailingSlash,
+    base: e.context.nitro.baseURL,
+    withBase: options.withBase
+  });
+}
+
+const RE_SOCIAL_META_TAG = /<meta[^>]+(property|name)="(twitter|og):([^"]+)"[^>]*>/g;
+const RE_SOCIAL_META_KEY = /(property|name)="(twitter|og):([^"]+)"/;
+const RE_META_CONTENT = /content="([^"]+)"/;
+const RE_OG_KEY_PARAM = /[,/]k_([^,./]+)/;
+function extractSocialPreviewTags(html) {
+  const data = [];
+  const rootData = {};
+  const socialMetaTags = html.match(RE_SOCIAL_META_TAG) || [];
+  let currentArrayIdx = -1;
+  socialMetaTags.forEach((tag) => {
+    const [, , type, key] = tag.match(RE_SOCIAL_META_KEY);
+    const value = tag.match(RE_META_CONTENT)?.[1];
+    if (!value) {
+      return;
+    }
+    if (key === "title" || key === "description") {
+      rootData[`${type}:${key}`] = value;
+      return;
+    }
+    if (type === "og" && key === "image") {
+      currentArrayIdx++;
+    }
+    if (!data[currentArrayIdx])
+      data[currentArrayIdx] = {};
+    if (!data[currentArrayIdx][type])
+      data[currentArrayIdx][type] = {};
+    data[currentArrayIdx][type][key] = value;
+  });
+  data.forEach((preview) => {
+    if (preview.og?.image && preview.og?.image.includes("/_og/")) {
+      const url = withoutQuery(preview.og.image);
+      const keyMatch = url.match(RE_OG_KEY_PARAM);
+      preview.key = keyMatch?.[1] || "og";
+    }
+  });
+  return [rootData, data];
+}
+function detectBase64MimeType(data) {
+  const signatures = {
+    "R0lGODdh": "image/gif",
+    "R0lGODlh": "image/gif",
+    "iVBORw0KGgo": "image/png",
+    "/9j/": "image/jpeg",
+    "UklGR": "image/webp",
+    "AAABAA": "image/x-icon",
+    "PHN2Zy": "image/svg+xml",
+    // <svg
+    "PD94bW": "image/svg+xml",
+    // <?xml
+    "PCEt": "image/svg+xml"
+    // <!--
+  };
+  for (const s in signatures) {
+    if (data.startsWith(s)) {
+      return signatures[s];
+    }
+  }
+  return "image/svg+xml";
+}
+function toBase64Image(data) {
+  const base64 = typeof data === "string" ? data : Buffer.from(data).toString("base64");
+  const type = detectBase64MimeType(base64);
+  return `data:${type};base64,${base64}`;
+}
+function withoutQuery(path) {
+  return path.split("?")[0];
+}
+
+const RE_BASE64_URL_DASH = /-/g;
+const RE_BASE64_URL_TILDE = /~/g;
+const RE_DOUBLE_UNDERSCORE = /__/g;
+const RE_PLUS = /\+/g;
+const RE_SINGLE_UNDERSCORE = /(?<!_)_(?!_)/;
+const RE_OG_ROUTE_PREFIX = /\/_og\/[ds]\//;
+const RE_COMMA_PARAM_SEPARATOR = /,(?=\w+_)/;
+const PARAM_ALIASES = {
+  w: "width",
+  h: "height",
+  c: "component",
+  em: "emojis",
+  k: "key",
+  a: "alt",
+  u: "url",
+  cache: "cacheMaxAgeSeconds",
+  p: "_path",
+  // page path - needs alias since _path starts with underscore
+  q: "_query",
+  // query params - needs alias since _query starts with underscore
+  ch: "_componentHash"
+  // component template hash for cache busting prerendered URLs
+};
+Object.fromEntries(
+  Object.entries(PARAM_ALIASES).map(([alias, param]) => [param, alias])
+);
+const KNOWN_PARAMS = /* @__PURE__ */ new Set([
+  "width",
+  "height",
+  "component",
+  "renderer",
+  "emojis",
+  "key",
+  "alt",
+  "url",
+  "cacheMaxAgeSeconds",
+  "cacheKey",
+  "extension",
+  "satori",
+  "resvg",
+  "sharp",
+  "screenshot",
+  "takumi",
+  "fonts",
+  "_query",
+  "_hash",
+  "_componentHash",
+  "socialPreview",
+  "props",
+  "_path"
+]);
+const COMPLEX_PARAMS = /* @__PURE__ */ new Set(["satori", "resvg", "sharp", "screenshot", "takumi", "fonts", "_query", "_path"]);
+function b64Decode(str) {
+  const standard = str.replace(RE_BASE64_URL_DASH, "+").replace(RE_BASE64_URL_TILDE, "/");
+  const padded = standard + "=".repeat((4 - standard.length % 4) % 4);
+  if (typeof atob === "function") {
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+  }
+  return Buffer.from(padded, "base64").toString("utf8");
+}
+const RE_NUMERIC = /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/;
+function tryParseNumber(value) {
+  if (RE_NUMERIC.test(value)) {
+    const num = Number(value);
+    if (!Number.isNaN(num))
+      return num;
+  }
+  return value;
+}
+function decodeSimpleValue(raw) {
+  if (raw.startsWith("~~")) {
+    return decodeURIComponent(raw.slice(1).replace(RE_PLUS, "%20")).replace(RE_DOUBLE_UNDERSCORE, "_");
+  }
+  if (raw.startsWith("~")) {
+    try {
+      return b64Decode(raw.slice(1));
+    } catch {
+      return decodeURIComponent(raw.replace(RE_PLUS, "%20")).replace(RE_DOUBLE_UNDERSCORE, "_");
+    }
+  }
+  return decodeURIComponent(raw.replace(RE_PLUS, "%20")).replace(RE_DOUBLE_UNDERSCORE, "_");
+}
+function decodeOgImageParams(encoded) {
+  if (!encoded || encoded === "default")
+    return {};
+  const options = {};
+  const parts = encoded.split(RE_COMMA_PARAM_SEPARATOR);
+  for (const part of parts) {
+    const idx = part.search(RE_SINGLE_UNDERSCORE);
+    if (idx === -1)
+      continue;
+    const alias = part.slice(0, idx);
+    let value = part.slice(idx + 1);
+    const paramName = PARAM_ALIASES[alias] || alias;
+    if (COMPLEX_PARAMS.has(paramName)) {
+      try {
+        const json = b64Decode(value);
+        options[paramName] = JSON.parse(json);
+      } catch {
+        options[paramName] = value;
+      }
+    } else if (paramName === "props") {
+      try {
+        const json = b64Decode(value);
+        options.props = { ...options.props, ...JSON.parse(json) };
+      } catch {
+      }
+    } else if (KNOWN_PARAMS.has(paramName)) {
+      value = decodeSimpleValue(value);
+      if (value === "true") {
+        options[paramName] = true;
+      } else if (value === "false") {
+        options[paramName] = false;
+      } else if (value !== "") {
+        options[paramName] = tryParseNumber(value);
+      }
+    } else {
+      value = decodeSimpleValue(value);
+      options.props = options.props || {};
+      if (value === "true") {
+        options.props[paramName] = true;
+      } else if (value === "false") {
+        options.props[paramName] = false;
+      } else if (value !== "") {
+        options.props[paramName] = tryParseNumber(value);
+      }
+    }
+  }
+  return options;
+}
+function signEncodedParams(encoded, secret) {
+  return digest(`${secret}:${encoded}`).slice(0, 16);
+}
+function verifyOgImageSignature(encoded, signature, secret) {
+  const expected = signEncodedParams(encoded, secret);
+  if (expected.length !== signature.length)
+    return false;
+  let result = 0;
+  for (let i = 0; i < expected.length; i++)
+    result |= expected.charCodeAt(i) ^ signature.charCodeAt(i);
+  return result === 0;
+}
+function extractEncodedSegment(path, extension) {
+  const match = path.match(RE_OG_ROUTE_PREFIX);
+  if (match?.index != null) {
+    return path.slice(match.index + match[0].length).replace(new RegExp(`\\.${extension}$`), "");
+  }
+  return path.split("/").pop().replace(new RegExp(`\\.${extension}$`), "");
+}
+
+const RE_KEBAB_CASE = /-([a-z])/g;
+function isInternalRoute(path) {
+  return path.startsWith("/_") || path.startsWith("@");
+}
+function filterIsOgImageOption(key) {
+  const keys = [
+    "url",
+    "extension",
+    "width",
+    "height",
+    "alt",
+    "props",
+    "renderer",
+    "component",
+    "emojis",
+    "_query",
+    "_hash",
+    "fonts",
+    "satori",
+    "resvg",
+    "sharp",
+    "screenshot",
+    "takumi",
+    "cacheMaxAgeSeconds",
+    "cacheKey",
+    "key"
+  ];
+  return keys.includes(key);
+}
+function separateProps(options, ignoreKeys = []) {
+  options = options || {};
+  const _props = defu(options.props, Object.fromEntries(
+    Object.entries({ ...options }).filter(([k]) => !filterIsOgImageOption(k) && !ignoreKeys.includes(k))
+  ));
+  const props = {};
+  Object.entries(_props).forEach(([key, val]) => {
+    props[key.replace(RE_KEBAB_CASE, (g) => String(g[1]).toUpperCase())] = val;
+  });
+  const result = Object.fromEntries(
+    Object.entries({ ...options }).filter(([k]) => filterIsOgImageOption(k) || ignoreKeys.includes(k))
+  );
+  if (Object.keys(props).length > 0)
+    result.props = props;
+  return result;
+}
+const DANGEROUS_ATTRS = /* @__PURE__ */ new Set(["autofocus", "contenteditable", "tabindex", "accesskey"]);
+function sanitizeProps(props) {
+  const clean = {};
+  for (const key of Object.keys(props)) {
+    if (key.startsWith("on") || DANGEROUS_ATTRS.has(key.toLowerCase()))
+      continue;
+    clean[key] = props[key];
+  }
+  return clean;
+}
+
+const logger$2 = createModuleLogger("@nuxtjs/og-image");
+
+function hashKey(value) {
+  return fnv1a64Base36(identify(value));
+}
 
 const _DRIVE_LETTER_START_RE = /^[A-Za-z]:\//;
 function normalizeWindowsPath(input = "") {
@@ -4485,16 +6356,68 @@ function normalizeWindowsPath(input = "") {
   }
   return input.replace(/\\/g, "/").replace(_DRIVE_LETTER_START_RE, (r) => r.toUpperCase());
 }
+
+const _UNC_REGEX = /^[/\\]{2}/;
 const _IS_ABSOLUTE_RE = /^[/\\](?![/\\])|^[/\\]{2}(?!\.)|^[A-Za-z]:[/\\]/;
 const _DRIVE_LETTER_RE = /^[A-Za-z]:$/;
 const _ROOT_FOLDER_RE = /^\/([A-Za-z]:)?$/;
+const normalize = function(path) {
+  if (path.length === 0) {
+    return ".";
+  }
+  path = normalizeWindowsPath(path);
+  const isUNCPath = path.match(_UNC_REGEX);
+  const isPathAbsolute = isAbsolute(path);
+  const trailingSeparator = path[path.length - 1] === "/";
+  path = normalizeString(path, !isPathAbsolute);
+  if (path.length === 0) {
+    if (isPathAbsolute) {
+      return "/";
+    }
+    return trailingSeparator ? "./" : ".";
+  }
+  if (trailingSeparator) {
+    path += "/";
+  }
+  if (_DRIVE_LETTER_RE.test(path)) {
+    path += "/";
+  }
+  if (isUNCPath) {
+    if (!isPathAbsolute) {
+      return `//./${path}`;
+    }
+    return `//${path}`;
+  }
+  return isPathAbsolute && !isAbsolute(path) ? `/${path}` : path;
+};
+const join = function(...segments) {
+  let path = "";
+  for (const seg of segments) {
+    if (!seg) {
+      continue;
+    }
+    if (path.length > 0) {
+      const pathTrailing = path[path.length - 1] === "/";
+      const segLeading = seg[0] === "/";
+      const both = pathTrailing && segLeading;
+      if (both) {
+        path += seg.slice(1);
+      } else {
+        path += pathTrailing || segLeading ? seg : `/${seg}`;
+      }
+    } else {
+      path += seg;
+    }
+  }
+  return normalize(path);
+};
 function cwd() {
   if (typeof process !== "undefined" && typeof process.cwd === "function") {
     return process.cwd().replace(/\\/g, "/");
   }
   return "/";
 }
-const resolve = function(...arguments_) {
+const resolve$1 = function(...arguments_) {
   arguments_ = arguments_.map((argument) => normalizeWindowsPath(argument));
   let resolvedPath = "";
   let resolvedAbsolute = false;
@@ -4575,8 +6498,8 @@ const isAbsolute = function(p) {
   return _IS_ABSOLUTE_RE.test(p);
 };
 const relative = function(from, to) {
-  const _from = resolve(from).replace(_ROOT_FOLDER_RE, "$1").split("/");
-  const _to = resolve(to).replace(_ROOT_FOLDER_RE, "$1").split("/");
+  const _from = resolve$1(from).replace(_ROOT_FOLDER_RE, "$1").split("/");
+  const _to = resolve$1(to).replace(_ROOT_FOLDER_RE, "$1").split("/");
   if (_to[0][1] === ":" && _from[0][1] === ":" && _from[0] !== _to[0]) {
     return _to.join("/");
   }
@@ -4598,12 +6521,653 @@ const dirname = function(p) {
   return segments.join("/") || (isAbsolute(p) ? "/" : ".");
 };
 
-function readAsset (id) {
-  const serverDir = dirname(fileURLToPath(globalThis._importMeta_.url));
-  return promises.readFile(resolve(serverDir, assets[id].path))
+const logger$1 = createModuleLogger("Nuxt OG Image");
+
+function autoEjectCommunityTemplate(component, runtimeConfig, options) {
+  return;
 }
 
-const publicAssetBases = {"/_nuxt/builds/meta/":{"maxAge":31536000},"/_nuxt/builds/":{"maxAge":1},"/_nuxt/":{"maxAge":31536000}};
+/**
+* Compute the `hashId` segment embedded in an island URL (`/__nuxt_island/<Name>_<hashId>.json`).
+*
+* The hash binds the response to the requested `(name, props, context, source)` tuple, so the
+* server can reject requests whose URL hash does not match the supplied query/body. Use this
+* from island clients if you need to ensure a hash stays in step with Nuxt's implementation.
+*
+* `props` may be passed either as the raw props object or as the JSON string that will be sent
+* over the wire; the two produce the same hash when the round-trip is identity.
+*
+* @since 4.5.0
+*/
+function getIslandHash(input) {
+	const props = typeof input.props === "string" ? parseSerializedProps(input.props) : input.props ?? {};
+	return hash$1([
+		input.name,
+		props,
+		input.context ?? {},
+		input.source
+	]).replace(/[-_]/g, "");
+}
+function parseSerializedProps(serializedProps) {
+	try {
+		return JSON.parse(serializedProps);
+	} catch {
+		return serializedProps;
+	}
+}
+
+function fetchIsland(e, component, props, timeout) {
+  const hashId = getIslandHash({ name: component, props });
+  const signal = timeout ? AbortSignal.timeout(timeout) : void 0;
+  return fetchWithEvent(e, `/__nuxt_island/${component}_${hashId}.json`, {
+    params: {
+      props: JSON.stringify(props)
+    },
+    timeout,
+    signal
+  });
+}
+function createNitroRouteRuleMatcher() {
+  return createNitroRouteRuleMatcher$1(useRuntimeConfig());
+}
+
+const componentNames = [{"hash":"","pascalName":"BlogPostTakumi","kebabName":"blog-post-takumi","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"takumi","propNames":[]},{"hash":"","pascalName":"BrutalistSatori","kebabName":"brutalist-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"DocsTakumi","kebabName":"docs-takumi","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"takumi","propNames":[]},{"hash":"","pascalName":"FrameSatori","kebabName":"frame-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"NuxtSatori","kebabName":"nuxt-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"NuxtSeoSatori","kebabName":"nuxt-seo-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"NuxtSeoTakumi","kebabName":"nuxt-seo-takumi","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"takumi","propNames":[]},{"hash":"","pascalName":"PergelSatori","kebabName":"pergel-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"ProductCardTakumi","kebabName":"product-card-takumi","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"takumi","propNames":[]},{"hash":"","pascalName":"SaaSSatori","kebabName":"saa-ssatori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"SimpleBlogSatori","kebabName":"simple-blog-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"UnJsSatori","kebabName":"un-js-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]},{"hash":"","pascalName":"WithEmojiSatori","kebabName":"with-emoji-satori","path":"D:/Samuel/Folder-Personal-Work/Folder-Web-Development/Company-Profile-PT-Tevori_Global/src/tevori_global/node_modules/nuxt-og-image/dist/runtime/app/components/Templates/Community","category":"community","renderer":"satori","propNames":[]}];
+
+const RENDERER_SUFFIXES = ["satori", "browser", "takumi"];
+const RE_RENDERER_SUFFIX_DOT = /\.?(satori|browser|takumi)$/i;
+const RE_RENDERER_SUFFIX_PASCAL = /(Satori|Browser|Takumi)$/;
+const RE_OG_IMAGE_PREFIX = /^OgImage/;
+function parseInputName(name) {
+  for (const suffix of RENDERER_SUFFIXES) {
+    if (name.endsWith(`.${suffix}`))
+      return { baseName: name.slice(0, -(suffix.length + 1)), renderer: suffix };
+  }
+  for (const suffix of RENDERER_SUFFIXES) {
+    const pascal = suffix.charAt(0).toUpperCase() + suffix.slice(1);
+    if (name.endsWith(pascal))
+      return { baseName: name.slice(0, -pascal.length), renderer: suffix };
+  }
+  return { baseName: name, renderer: null };
+}
+function stripRenderer(name) {
+  return name.replace(RE_RENDERER_SUFFIX_DOT, "").replace(RE_RENDERER_SUFFIX_PASCAL, "");
+}
+const OGIMAGE_PREFIXES = [
+  { prefix: "OgImageCommunity", overlapWord: "Community" },
+  { prefix: "OgImageTemplate", overlapWord: "Template" },
+  { prefix: "OgImage", overlapWord: "Image" }
+];
+function getComponentBaseNames(component) {
+  const names = [];
+  const stripped = stripRenderer(component.pascalName);
+  for (const { prefix, overlapWord } of OGIMAGE_PREFIXES) {
+    if (!stripped.startsWith(prefix))
+      continue;
+    const withoutPrefix = stripped.slice(prefix.length);
+    if (withoutPrefix) {
+      names.push(withoutPrefix);
+      if (withoutPrefix !== overlapWord)
+        names.push(overlapWord + withoutPrefix);
+    } else {
+      names.push(overlapWord);
+    }
+    break;
+  }
+  if (names.length === 0)
+    names.push(stripped);
+  return names;
+}
+function resolveComponent(name) {
+  const exactMatch = componentNames.find((c) => c.pascalName === name);
+  if (exactMatch)
+    return { component: exactMatch, renderer: exactMatch.renderer };
+  const { baseName, renderer } = parseInputName(name);
+  const strippedBaseName = baseName.replace(RE_OG_IMAGE_PREFIX, "");
+  const matches = componentNames.filter((c) => {
+    const baseNames = getComponentBaseNames(c);
+    return baseNames.some(
+      (cBase) => cBase === baseName || cBase === strippedBaseName || cBase === `OgImage${baseName}` || cBase === `OgImage${strippedBaseName}`
+    );
+  });
+  const filtered = renderer ? matches.filter((c) => c.renderer === renderer) : matches;
+  if (filtered.length === 0) {
+    if (renderer && matches.length > 0) {
+      const available = matches.map((c) => `${getComponentBaseNames(c)[0]}.${c.renderer}`).join(", ");
+      throw createError$1({
+        statusCode: 500,
+        message: `[Nuxt OG Image] Component "${name}" not found. Available variants: ${available}`
+      });
+    }
+    throw createError$1({
+      statusCode: 500,
+      message: `[Nuxt OG Image] Component "${name}" not found. Create a component in components/OgImage/ with a renderer suffix (e.g., ${baseName}.satori.vue)`
+    });
+  }
+  const appComponents = filtered.filter((c) => c.category !== "community");
+  if (appComponents.length > 0) {
+    const resolved2 = appComponents[0];
+    return { component: resolved2, renderer: resolved2.renderer };
+  }
+  const resolved = filtered[0];
+  return { component: resolved, renderer: resolved.renderer };
+}
+function normaliseOptions(_options) {
+  const options = { ..._options };
+  if (options.component === "PageScreenshot") {
+    return {
+      options,
+      renderer: options.renderer || "browser",
+      component: void 0
+    };
+  }
+  if (!componentNames?.length) {
+    throw createError$1({
+      statusCode: 500,
+      message: `[Nuxt OG Image] No OG Image components found. Create a component in components/OgImage/ with a renderer suffix (e.g., Default.satori.vue)`
+    });
+  }
+  let resolved;
+  let renderer;
+  if (options.component) {
+    const result = resolveComponent(options.component);
+    resolved = result.component;
+    renderer = result.renderer;
+  } else {
+    resolved = componentNames.find((c) => c.category !== "community") || componentNames[0];
+    renderer = resolved.renderer;
+  }
+  options.component = resolved.pascalName;
+  if (resolved.category === "community") {
+    {
+      const appComponent = componentNames.find((c) => c.category !== "community");
+      if (appComponent) {
+        resolved = appComponent;
+        renderer = resolved.renderer;
+        options.component = resolved.pascalName;
+      } else {
+        throw createError$1({
+          statusCode: 500,
+          message: `Community template "${resolved.pascalName}" must be ejected before production use. Run: npx nuxt-og-image eject ${resolved.pascalName}
+  No app components found \u2014 create one in components/OgImage/`
+        });
+      }
+    }
+  }
+  return {
+    options,
+    renderer,
+    component: resolved
+  };
+}
+
+function getEventQuery(event) {
+  return getQuery$1(event.path);
+}
+
+const RE_TOKEN = /[^\w-]/g;
+function sanitizeName(name) {
+  return name.replace(RE_TOKEN, "_");
+}
+function createTimings() {
+  const totals = /* @__PURE__ */ new Map();
+  const spans = /* @__PURE__ */ new Map();
+  const record = (name, ms) => {
+    const key = sanitizeName(name);
+    const existing = totals.get(key);
+    if (existing) {
+      existing.dur += ms;
+      existing.count += 1;
+    } else {
+      totals.set(key, { dur: ms, count: 1 });
+    }
+  };
+  const start = (name) => {
+    const key = sanitizeName(name);
+    const t0 = performance.now();
+    const span = spans.get(key) ?? { open: 0, windowStart: 0, wall: 0 };
+    if (span.open === 0)
+      span.windowStart = t0;
+    span.open += 1;
+    spans.set(key, span);
+    let ended = false;
+    return () => {
+      if (ended)
+        return 0;
+      ended = true;
+      const t1 = performance.now();
+      const ms = t1 - t0;
+      span.open -= 1;
+      if (span.open === 0) {
+        span.wall += t1 - span.windowStart;
+        const existing = totals.get(key);
+        if (existing) {
+          existing.dur = span.wall;
+          existing.count += 1;
+        } else {
+          totals.set(key, { dur: span.wall, count: 1 });
+        }
+      } else {
+        const existing = totals.get(key);
+        if (existing)
+          existing.count += 1;
+        else
+          totals.set(key, { dur: 0, count: 1 });
+      }
+      return ms;
+    };
+  };
+  const measure = async (name, fn) => {
+    const end = start(name);
+    try {
+      return await fn();
+    } finally {
+      end();
+    }
+  };
+  const entries = () => Array.from(totals.entries()).map(([name, v]) => ({
+    name,
+    dur: Math.round(v.dur * 1e3) / 1e3,
+    count: v.count > 1 ? v.count : void 0
+  }));
+  const header = () => entries().map(({ name, dur, count }) => {
+    const desc = count ? `;desc="n=${count}"` : "";
+    return `${name}${desc};dur=${dur}`;
+  }).join(", ");
+  return { start, record, measure, entries, header };
+}
+const TIMING_CTX_KEY = "_ogImageTimings";
+
+function withTimeout(promise, ms, label) {
+  let timer;
+  return Promise.race([
+    Promise.resolve(promise),
+    new Promise((_, reject) => {
+      timer = setTimeout(
+        () => reject(new Error(`${label} timed out after ${ms}ms`)),
+        ms
+      );
+    })
+  ]).finally(() => clearTimeout(timer));
+}
+
+function toRecord(value) {
+  return typeof value === "object" && value !== null ? value : void 0;
+}
+function getCloudflareEnv(event) {
+  const runtime = event && "runtime" in event ? toRecord(event.runtime) : void 0;
+  const runtimeCloudflare = toRecord(runtime?.cloudflare);
+  const runtimeEnv = toRecord(runtimeCloudflare?.env);
+  if (runtimeEnv)
+    return runtimeEnv;
+  const contextCloudflare = toRecord(event?.context.cloudflare);
+  const contextEnv = toRecord(contextCloudflare?.env);
+  if (contextEnv)
+    return contextEnv;
+  const platform = toRecord(event?.context._platform);
+  const platformCloudflare = toRecord(platform?.cloudflare);
+  return toRecord(platformCloudflare?.env);
+}
+
+function useOgImageRuntimeConfig(e) {
+  const c = useRuntimeConfig(e);
+  const moduleCfg = c["nuxt-og-image"];
+  const cloudflareEnv = getCloudflareEnv(e);
+  const runtimeSecret = c.ogImage?.secret;
+  const cloudflareSecret = cloudflareEnv?.NUXT_OG_IMAGE_SECRET;
+  const overrideSecret = typeof runtimeSecret === "string" && runtimeSecret ? runtimeSecret : typeof cloudflareSecret === "string" ? cloudflareSecret : void 0;
+  const security = overrideSecret ? { ...moduleCfg.security || {}, secret: overrideSecret } : moduleCfg.security;
+  return {
+    defaults: {},
+    ...moduleCfg,
+    security,
+    app: {
+      baseURL: c.app.baseURL
+    }
+  };
+}
+
+const satoriRendererInstance = { instance: void 0 };
+const browserRendererInstance = { instance: void 0 };
+const takumiRendererInstance = { instance: void 0 };
+async function getSatoriRenderer() {
+  satoriRendererInstance.instance = satoriRendererInstance.instance || await import('./empty.mjs').then((m) => m.default);
+  return satoriRendererInstance.instance;
+}
+async function getBrowserRenderer() {
+  browserRendererInstance.instance = browserRendererInstance.instance || await import('./empty.mjs').then((m) => m.default);
+  return browserRendererInstance.instance;
+}
+async function getTakumiRenderer() {
+  takumiRendererInstance.instance = takumiRendererInstance.instance || await import('./renderer.mjs').then((m) => m.default);
+  return takumiRendererInstance.instance;
+}
+
+const RE_HASH_MODE = /^o_([a-z0-9]+)$/i;
+const RE_SIGNATURE_SUFFIX = /,s_([^,]+)$/;
+function resolvePathCacheKey(e, path, resolvedOptions) {
+  const siteConfig = getSiteConfig(e, {
+    resolveRefs: true
+  });
+  const basePath = withoutTrailingSlash(withoutLeadingSlash(normalizeKey$1(path)));
+  const hashParts = [
+    basePath,
+    siteConfig.url
+  ];
+  if (resolvedOptions)
+    hashParts.push(hashKey(resolvedOptions));
+  return [
+    !basePath || basePath === "/" ? "index" : basePath,
+    hashKey(hashParts)
+  ].join(":");
+}
+async function resolveContext(e) {
+  const runtimeConfig = useOgImageRuntimeConfig(e);
+  const resolvePathWithBase = createSitePathResolver(e, {
+    absolute: false,
+    withBase: true
+  });
+  const path = resolvePathWithBase(parseURL(e.path).pathname);
+  let extension = path.split(".").pop();
+  if (!extension || !path.includes(".") || extension.includes("/") || !["png", "jpeg", "jpg", "webp", "svg", "html", "json"].includes(extension)) {
+    extension = "png";
+  }
+  const encodedSegment = extractEncodedSegment(path, extension);
+  const secret = runtimeConfig.security?.secret;
+  let paramsSegment = encodedSegment;
+  if (secret && true && true) {
+    const sigMatch = encodedSegment.match(RE_SIGNATURE_SUFFIX);
+    if (!sigMatch) {
+      return createError$1({
+        statusCode: 403,
+        statusMessage: "[Nuxt OG Image] Missing URL signature. Configure security.secret to sign URLs."
+      });
+    }
+    const signature = sigMatch[1];
+    paramsSegment = encodedSegment.slice(0, sigMatch.index);
+    if (!verifyOgImageSignature(paramsSegment, signature, secret)) {
+      return createError$1({
+        statusCode: 403,
+        statusMessage: "[Nuxt OG Image] Invalid URL signature."
+      });
+    }
+  } else if (secret && RE_SIGNATURE_SUFFIX.test(encodedSegment)) {
+    paramsSegment = encodedSegment.replace(RE_SIGNATURE_SUFFIX, "");
+  }
+  const hashMatch = paramsSegment.match(RE_HASH_MODE);
+  let urlOptions = {};
+  if (hashMatch) {
+    const optionsHash = hashMatch[1];
+    {
+      return createError$1({
+        statusCode: 400,
+        statusMessage: `[Nuxt OG Image] Hash-based URLs (o_${optionsHash}) are only supported during prerendering. Use encoded params or query params for runtime.`
+      });
+    }
+  } else {
+    urlOptions = decodeOgImageParams(paramsSegment);
+  }
+  const maxQueryParamSize = runtimeConfig.security?.maxQueryParamSize;
+  if (maxQueryParamSize && true) {
+    const queryString = parseURL(e.path).search || "";
+    if (queryString.length > maxQueryParamSize) {
+      return createError$1({
+        statusCode: 400,
+        statusMessage: `[Nuxt OG Image] Query string exceeds maximum allowed length of ${maxQueryParamSize} characters.`
+      });
+    }
+  }
+  let queryParams = {};
+  const basePath = withoutTrailingSlash(urlOptions._path || "/");
+  const componentHash = urlOptions._componentHash || "";
+  delete urlOptions._path;
+  delete urlOptions._hash;
+  delete urlOptions._componentHash;
+  if (runtimeConfig.security?.strict) {
+    delete urlOptions.html;
+  }
+  const basePathWithQuery = queryParams._query && typeof queryParams._query === "object" ? withQuery(basePath, queryParams._query) : basePath;
+  const isDebugJsonPayload = extension === "json" && (runtimeConfig.debug);
+  const routeRuleMatcher = createNitroRouteRuleMatcher();
+  const routeRules = routeRuleMatcher(basePath);
+  const ogImageRouteRules = separateProps(routeRules.ogImage);
+  const options = defu(queryParams, urlOptions, ogImageRouteRules, runtimeConfig.defaults);
+  const maxDim = runtimeConfig.security?.maxDimension || 2048;
+  if (options.width != null) {
+    const w = Number(options.width);
+    options.width = Number.isFinite(w) ? Math.min(Math.max(1, w), maxDim) : void 0;
+  }
+  if (options.height != null) {
+    const h = Number(options.height);
+    options.height = Number.isFinite(h) ? Math.min(Math.max(1, h), maxDim) : void 0;
+  }
+  if (options.props && typeof options.props === "object")
+    options.props = sanitizeProps(options.props);
+  if (!options) {
+    return createError$1({
+      statusCode: 404,
+      statusMessage: "[Nuxt OG Image] OG Image not found."
+    });
+  }
+  const normalised = normaliseOptions(options);
+  if (normalised.component && normalised.options.props && typeof normalised.options.props === "object") {
+    const builtinProps = /* @__PURE__ */ new Set(["colorMode", "timestamp"]);
+    const allowedProps = normalised.component.propNames || [];
+    const allowedSet = new Set(allowedProps);
+    const raw = normalised.options.props;
+    const filtered = {};
+    for (const key2 of Object.keys(raw)) {
+      if (allowedSet.has(key2) || builtinProps.has(key2))
+        filtered[key2] = raw[key2];
+    }
+    normalised.options.props = filtered;
+  }
+  if (normalised.component?.category === "community")
+    autoEjectCommunityTemplate(normalised.component, runtimeConfig, { requestPath: e.path });
+  const rendererType = normalised.renderer;
+  const baseCacheKey = normalised.options.cacheKey || (hashMatch ? `hash:${hashMatch[1]}` : resolvePathCacheKey(e, basePathWithQuery, normalised.options));
+  const key = componentHash ? `${baseCacheKey}:${componentHash}` : baseCacheKey;
+  let renderer;
+  switch (rendererType) {
+    case "satori":
+      renderer = await getSatoriRenderer();
+      break;
+    case "browser":
+      renderer = await getBrowserRenderer();
+      break;
+    case "takumi":
+      renderer = await getTakumiRenderer();
+      break;
+  }
+  if (!renderer || renderer.__mock__) {
+    throw createError$1({
+      statusCode: 400,
+      statusMessage: `[Nuxt OG Image] Renderer "${rendererType}" is not available. Component "${normalised.component?.pascalName}" requires the ${rendererType} renderer but it's not bundled for this preset.`
+    });
+  }
+  const timings = e.context[TIMING_CTX_KEY] || createTimings();
+  e.context[TIMING_CTX_KEY] = timings;
+  const ctx = {
+    e,
+    key,
+    renderer,
+    isDevToolsContextRequest: isDebugJsonPayload,
+    runtimeConfig,
+    publicStoragePath: runtimeConfig.publicStoragePath,
+    extension,
+    basePath,
+    options: normalised.options,
+    timings,
+    _nitro: useNitroApp()
+  };
+  const hookTimeout = runtimeConfig.security?.renderTimeout ?? 15e3;
+  await withTimeout(
+    ctx._nitro.hooks.callHook("nuxt-og-image:context", ctx),
+    hookTimeout,
+    "nuxt-og-image:context hook"
+  );
+  return ctx;
+}
+
+const _73po3bstlX9uZNBtTVl8SPJ2WSBDoWC_u8OThwScAIs = defineNitroPlugin(async (nitro) => {
+  return;
+});
+
+const plugins = [
+  _vjhEsKKZK2_IKqvIuT9GhbeyFRVSzRP04fRm8tsAZ8,
+_af6_Ay9d6eP3_NOxWgNrabfwWmzpctGliTl7xIX6mk,
+_QKrvezTIjl6eFBfDf18DFW0n96cjskHZ1kRfjYgjPFw,
+_73po3bstlX9uZNBtTVl8SPJ2WSBDoWC_u8OThwScAIs
+];
+
+const assets = {
+  "/_nuxt/BGze3w87.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"4f-bd4ZYllBi+6/ZVs6N0B4M+X0a8o\"",
+    "mtime": "2026-09-08T17:09:05.377Z",
+    "size": 79,
+    "path": "../public/_nuxt/BGze3w87.js"
+  },
+  "/_nuxt/BTJZyBET.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"620-vR7oLdKI5ep0Ahppsj+wQFaa7gY\"",
+    "mtime": "2026-09-08T17:09:05.378Z",
+    "size": 1568,
+    "path": "../public/_nuxt/BTJZyBET.js"
+  },
+  "/_nuxt/ciHRL070.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"43c-N6m8C43keZjviH/9sK7uxaqzojk\"",
+    "mtime": "2026-09-08T17:09:05.389Z",
+    "size": 1084,
+    "path": "../public/_nuxt/ciHRL070.js"
+  },
+  "/_nuxt/Bm39gBUF.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"a9ed-1RTr05dpm7HPSglI1JrdTzxFSug\"",
+    "mtime": "2026-09-08T17:09:05.379Z",
+    "size": 43501,
+    "path": "../public/_nuxt/Bm39gBUF.js"
+  },
+  "/_nuxt/CHvIgbfu.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1982a-n+G6ePqTdKt6sivtURM9+VmB9Q8\"",
+    "mtime": "2026-09-08T17:09:05.376Z",
+    "size": 104490,
+    "path": "../public/_nuxt/CHvIgbfu.js"
+  },
+  "/_nuxt/CZvUISum.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"5f9-AqzkXrdQtzsr0U5QBmoawFSKrWc\"",
+    "mtime": "2026-09-08T17:09:05.381Z",
+    "size": 1529,
+    "path": "../public/_nuxt/CZvUISum.js"
+  },
+  "/_nuxt/CMJbUpYz.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1b4c-00m6ALc68xT3oHc6Hc1sPaVeBcU\"",
+    "mtime": "2026-09-08T17:09:05.380Z",
+    "size": 6988,
+    "path": "../public/_nuxt/CMJbUpYz.js"
+  },
+  "/_nuxt/D4Pu4Yib.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"3cb5-tPjuxDZjFPwtOxFbm78x1DPq33Y\"",
+    "mtime": "2026-09-08T17:09:05.385Z",
+    "size": 15541,
+    "path": "../public/_nuxt/D4Pu4Yib.js"
+  },
+  "/_nuxt/DaQ7nlSl.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"9d4-5jVehirVJyiDFtVEIVvooCpjJA4\"",
+    "mtime": "2026-09-08T17:09:05.386Z",
+    "size": 2516,
+    "path": "../public/_nuxt/DaQ7nlSl.js"
+  },
+  "/_nuxt/CpK4QN8W.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"11cf4-ziNeq0fviFKZf4/T6gix9duwzDY\"",
+    "mtime": "2026-09-08T17:09:05.383Z",
+    "size": 72948,
+    "path": "../public/_nuxt/CpK4QN8W.js"
+  },
+  "/_nuxt/D31tGVaz.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"1d7dc-o9WOrO9RacFuH4QJo/IWqtGpj6c\"",
+    "mtime": "2026-09-08T17:09:05.384Z",
+    "size": 120796,
+    "path": "../public/_nuxt/D31tGVaz.js"
+  },
+  "/_nuxt/RmTuMMI_.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"85f-38An1nIUS3xpSwR7kckKQJ1AwmI\"",
+    "mtime": "2026-09-08T17:09:05.387Z",
+    "size": 2143,
+    "path": "../public/_nuxt/RmTuMMI_.js"
+  },
+  "/_nuxt/U7_2B5cM.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"e2a-0ZijKISUNkNj3t8vrSiwr0OPItE\"",
+    "mtime": "2026-09-08T17:09:05.388Z",
+    "size": 3626,
+    "path": "../public/_nuxt/U7_2B5cM.js"
+  },
+  "/_nuxt/WsBe7rex.js": {
+    "type": "text/javascript; charset=utf-8",
+    "etag": "\"fe8-65TTW13aV7uqNIVWC67EmKpdshw\"",
+    "mtime": "2026-09-08T17:09:05.388Z",
+    "size": 4072,
+    "path": "../public/_nuxt/WsBe7rex.js"
+  },
+  "/_nuxt/entry.phu97Zhq.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"8148-xRPa8IDYIOUqO9QGPKBGm+SIvG4\"",
+    "mtime": "2026-09-08T17:09:05.391Z",
+    "size": 33096,
+    "path": "../public/_nuxt/entry.phu97Zhq.css"
+  },
+  "/_nuxt/_slug_.C24noBk8.css": {
+    "type": "text/css; charset=utf-8",
+    "etag": "\"a9-yHqxuuQsBeEMxsal5jU1ORNTeOE\"",
+    "mtime": "2026-09-08T17:09:05.390Z",
+    "size": 169,
+    "path": "../public/_nuxt/_slug_.C24noBk8.css"
+  },
+  "/_nuxt/builds/latest.json": {
+    "type": "application/json",
+    "etag": "\"47-8Y80GY9XmfEPFBSxLmz/9ZXxfFE\"",
+    "mtime": "2026-09-08T17:09:06.785Z",
+    "size": 71,
+    "path": "../public/_nuxt/builds/latest.json"
+  },
+  "/_nuxt/builds/meta/e3b5d850-7328-4fd9-a95b-911db98ac516.json": {
+    "type": "application/json",
+    "etag": "\"58-/nXdcm4t1z+tKOjo0EjMD/41p+4\"",
+    "mtime": "2026-09-08T17:09:06.786Z",
+    "size": 88,
+    "path": "../public/_nuxt/builds/meta/e3b5d850-7328-4fd9-a95b-911db98ac516.json"
+  },
+  "/_og-static-fonts/inter-700-latin.ttf": {
+    "type": "font/ttf",
+    "etag": "\"10690-UVkukwUfo0FVnDkxnK3r8r+NndM\"",
+    "mtime": "2026-09-08T16:59:46.154Z",
+    "size": 67216,
+    "path": "../public/_og-static-fonts/inter-700-latin.ttf"
+  },
+  "/_og-static-fonts/inter-400-latin.ttf": {
+    "type": "font/ttf",
+    "etag": "\"105c8-MW0DM/3E4egS9aHQ0YHlh/qx7ks\"",
+    "mtime": "2026-09-08T16:59:46.143Z",
+    "size": 67016,
+    "path": "../public/_og-static-fonts/inter-400-latin.ttf"
+  }
+};
+
+function readAsset (id) {
+  const serverDir = dirname(fileURLToPath(globalThis._importMeta_.url));
+  return promises.readFile(resolve$1(serverDir, assets[id].path))
+}
+
+const publicAssetBases = {"/_nuxt/builds/meta/":{"maxAge":31536000},"/_nuxt/builds/":{"maxAge":1},"/_og-static-fonts/":{"maxAge":31536000},"/_nuxt/":{"maxAge":31536000}};
 
 function isPublicAssetURL(id = '') {
   if (assets[id]) {
@@ -4685,13 +7249,2398 @@ const _2iWpcg = eventHandler((event) => {
   return readAsset(id);
 });
 
+const PORT_SUFFIX_RE = /:\d+$/;
+const serverEnvSiteConfig = envSiteConfig(globalThis._importMeta_.env || {});
+const _PMm7hI = eventHandler(async (e) => {
+  if (e.context._initedSiteConfig)
+    return;
+  const runtimeConfig = useRuntimeConfig(e);
+  const config = runtimeConfig["nuxt-site-config"];
+  const nitroApp = useNitroApp();
+  const siteConfig = e.context.siteConfig || createSiteConfigStack({
+    debug: config.debug
+  });
+  const nitroOrigin = getNitroOrigin(e);
+  e.context.siteConfigNitroOrigin = nitroOrigin;
+  {
+    siteConfig.push({
+      _context: "nitro:init",
+      _priority: SiteConfigPriority.nitro,
+      url: nitroOrigin
+    });
+  }
+  siteConfig.push({
+    _context: "runtimeEnv",
+    _priority: SiteConfigPriority.runtime,
+    ...runtimeConfig.site || {},
+    ...runtimeConfig.public.site || {},
+    ...serverEnvSiteConfig
+  });
+  const buildStack = config.stack || [];
+  buildStack.forEach((c) => siteConfig.push(c));
+  const routeRules = getSiteRouteRules(e);
+  if (routeRules.site) {
+    siteConfig.push({
+      _context: "route-rules",
+      ...routeRules.site
+    });
+  }
+  if (config.multiTenancy) {
+    const host = parseURL(nitroOrigin).host?.replace(PORT_SUFFIX_RE, "") || "";
+    const tenant = config.multiTenancy?.find((t) => t.hosts.includes(host));
+    if (tenant) {
+      siteConfig.push({
+        _context: `multi-tenancy:${host}`,
+        _priority: SiteConfigPriority.runtime,
+        ...tenant.config
+      });
+    }
+  }
+  const ctx = { siteConfig, event: e };
+  await nitroApp.hooks.callHook("site-config:init", ctx);
+  e.context.siteConfig = ctx.siteConfig;
+  e.context._initedSiteConfig = true;
+});
+
+function getSiteIndexable(e) {
+  const { env, indexable } = getSiteConfig(e);
+  if (typeof indexable !== "undefined")
+    return String(indexable) === "true";
+  return env === "production";
+}
+
+function getSiteRobotConfig(e) {
+  const query = getQuery(e);
+  const hints = [];
+  const { groups, debug } = useRuntimeConfigNuxtRobots(e);
+  let indexable = getSiteIndexable(e);
+  const queryIndexableEnabled = String(query.mockProductionEnv) === "true" || query.mockProductionEnv === "";
+  if (debug || false) {
+    const { _context } = getSiteConfig(e, { debug: debug || false });
+    if (queryIndexableEnabled) {
+      indexable = true;
+      hints.push("You are mocking a production enviroment with ?mockProductionEnv query.");
+    } else if (!indexable && _context.indexable === "nuxt-robots:config") {
+      hints.push("You are blocking indexing with your Nuxt Robots config.");
+    } else if (!queryIndexableEnabled && !_context.indexable) {
+      hints.push(`Indexing is blocked in development. You can mock a production environment with ?mockProductionEnv query.`);
+    } else if (!indexable && !queryIndexableEnabled) {
+      hints.push(`Indexing is blocked by site config set by ${_context.indexable}.`);
+    } else if (indexable && !queryIndexableEnabled) {
+      hints.push(`Indexing is enabled from ${_context.indexable}.`);
+    }
+  }
+  if (groups.some((g) => g.userAgent.includes("*") && g.disallow.includes("/"))) {
+    indexable = false;
+    hints.push("You are blocking all user agents with a wildcard `Disallow /`.");
+  } else if (groups.some((g) => g.disallow.includes("/"))) {
+    hints.push("You are blocking specific user agents with `Disallow /`.");
+  }
+  return { indexable, hints };
+}
+
+const _MV93At = defineEventHandler(async (e) => {
+  const nitroApp = useNitroApp();
+  const { indexable} = getSiteRobotConfig(e);
+  const { credits, isNuxtContentV2, cacheControl } = useRuntimeConfigNuxtRobots(e);
+  let robotsTxtCtx = {
+    sitemaps: [],
+    groups: [
+      {
+        allow: [],
+        comment: [],
+        userAgent: ["*"],
+        disallow: ["/"]
+      }
+    ]
+  };
+  if (indexable) {
+    robotsTxtCtx = await resolveRobotsTxtContext(e);
+    robotsTxtCtx.sitemaps = [...new Set(
+      asArray(robotsTxtCtx.sitemaps).map((s) => !s.startsWith("http") ? withSiteUrl(e, s, { withBase: true}) : s)
+    )];
+    if (isNuxtContentV2) {
+      const contentWithRobotRules = await fetchWithEvent(e, "/__robots__/nuxt-content.json", {
+        headers: {
+          Accept: "application/json"
+        }
+      });
+      if (String(contentWithRobotRules).trim().startsWith("<!DOCTYPE")) {
+        logger$3.error("Invalid HTML returned from /__robots__/nuxt-content.json, skipping.");
+      } else {
+        for (const group of robotsTxtCtx.groups) {
+          if (group.userAgent.includes("*")) {
+            group.disallow.push(...contentWithRobotRules);
+            group.disallow = group.disallow.filter(Boolean);
+          }
+        }
+      }
+    }
+  }
+  let robotsTxt = generateRobotsTxt(robotsTxtCtx);
+  if (credits) {
+    robotsTxt = [
+      `# START nuxt-robots (${indexable ? "indexable" : "indexing disabled"})`,
+      robotsTxt,
+      "# END nuxt-robots"
+    ].filter(Boolean).join("\n");
+  }
+  setHeader(e, "Content-Type", "text/plain; charset=utf-8");
+  setHeader(e, "Cache-Control", !cacheControl ? "no-store" : cacheControl);
+  const hookCtx = { robotsTxt, e };
+  await nitroApp.hooks.callHook("robots:robots-txt", hookCtx);
+  return hookCtx.robotsTxt;
+});
+
+function isUnlocalizedLocalePage(page) {
+  return page._tag === "unlocalized" && typeof page.path === "string";
+}
+function matchesUnlocalizedLocalePage(page, path) {
+  if (matchPagePattern(page.path, path))
+    return true;
+  if (!page.subtree)
+    return false;
+  const subtreePattern = `${page.path === "/" ? "" : page.path.replace(/\/$/, "")}/[...__nuxtSeoSubtree]`;
+  return !!matchPagePattern(subtreePattern, path);
+}
+function normalizeHost(value) {
+  return value.trim().toLowerCase().replace(/^[a-z][a-z\d+.-]*:\/\//, "").split("/")[0];
+}
+function localeDomains(locale) {
+  return locale.domains?.length ? locale.domains : locale.domain ? [locale.domain] : [];
+}
+function resolveLocaleFromHost(host, i18n) {
+  if (!host)
+    return void 0;
+  const normalizedHost = normalizeHost(host);
+  const domainDefault = i18n.locales.find(
+    (locale) => locale.defaultForDomains?.some((domain) => normalizeHost(domain) === normalizedHost)
+  );
+  if (domainDefault)
+    return domainDefault;
+  const matches = i18n.locales.filter(
+    (locale) => localeDomains(locale).some((domain) => normalizeHost(domain) === normalizedHost)
+  );
+  return matches.length === 1 ? matches[0] : matches.find((locale) => locale.code === i18n.defaultLocale);
+}
+function firstLocaleDomain(locale) {
+  return locale?.defaultForDomains?.[0] || locale?.domain || locale?.domains?.[0];
+}
+function resolveCanonicalLocaleDomain(locale, defaultLocale) {
+  return firstLocaleDomain(locale) || firstLocaleDomain(defaultLocale);
+}
+function splitRouteSuffix(route) {
+  const suffixIndex = route.search(/[?#]/);
+  const rawPathname = suffixIndex === -1 ? route : route.slice(0, suffixIndex);
+  return {
+    pathname: rawPathname ? rawPathname.startsWith("/") ? rawPathname : `/${rawPathname}` : "/",
+    suffix: suffixIndex === -1 ? "" : route.slice(suffixIndex)
+  };
+}
+function resolveLocaleFromRoute(route, i18n, context = {}) {
+  const { pathname, suffix } = splitRouteSuffix(route);
+  if (i18n.strategy !== "no_prefix") {
+    const segments = pathname.split("/").filter(Boolean);
+    const first = segments[0];
+    const matched = first ? i18n.locales.find((l) => l.code === first) : void 0;
+    if (matched) {
+      const rest = segments.slice(1).join("/");
+      const trailingSlash = rest && pathname.endsWith("/") ? "/" : "";
+      return { locale: matched.code, basePath: `${rest ? `/${rest}${trailingSlash}` : "/"}${suffix}` };
+    }
+  }
+  const contextLocale = context.locale ? i18n.locales.find((locale) => locale.code === context.locale) : void 0;
+  const domainLocale = resolveLocaleFromHost(context.host, i18n);
+  return { locale: contextLocale?.code || domainLocale?.code || i18n.defaultLocale, basePath: `${pathname}${suffix}` };
+}
+function localePath(basePath, locale, i18n, context = {}) {
+  const { pathname, suffix } = splitRouteSuffix(basePath);
+  if (i18n.strategy === "no_prefix")
+    return `${pathname}${suffix}`;
+  const isDefault = locale === i18n.defaultLocale;
+  const localeConfig = i18n.locales.find((item) => item.code === locale);
+  const normalizedHost = context.host ? normalizeHost(context.host) : void 0;
+  const matchesDomainDefault = !!normalizedHost && !!localeConfig?.defaultForDomains?.some((domain) => normalizeHost(domain) === normalizedHost);
+  const isDomainDefault = i18n.differentDomains || matchesDomainDefault;
+  if (i18n.strategy === "prefix_except_default" && (isDefault || isDomainDefault))
+    return `${pathname}${suffix}`;
+  if (i18n.strategy === "prefix_and_default" && isDomainDefault)
+    return `${pathname}${suffix}`;
+  if (pathname === "/")
+    return `/${locale}${suffix}`;
+  return `/${locale}${pathname}${suffix}`;
+}
+function toSegments(path) {
+  return path.split("/").filter(Boolean);
+}
+const PAGE_PARAM_PATTERN = /\[\[(\.\.\.)?([^[\]]+)\]\]|\[(\.\.\.)?([^[\]]+)\]|:(\w+)(?:\((\.\*)?\))?([?*+]?)/g;
+function parsePageSegment(segment) {
+  const tokens = [];
+  let offset = 0;
+  for (const match of segment.matchAll(PAGE_PARAM_PATTERN)) {
+    const index = match.index;
+    if (index > offset)
+      tokens.push({ _tag: "static", value: segment.slice(offset, index) });
+    if (match[2]) {
+      tokens.push({ _tag: "param", param: { name: match[2], catchAll: !!match[1], optional: true } });
+    } else if (match[4]) {
+      tokens.push({ _tag: "param", param: { name: match[4], catchAll: !!match[3], optional: false } });
+    } else {
+      const modifier = match[7];
+      const routePattern = match[6];
+      tokens.push({
+        _tag: "param",
+        param: {
+          name: match[5],
+          catchAll: !!routePattern?.includes(".*") || modifier === "*" || modifier === "+",
+          optional: modifier === "?" || modifier === "*"
+        }
+      });
+    }
+    offset = index + match[0].length;
+  }
+  if (offset < segment.length)
+    tokens.push({ _tag: "static", value: segment.slice(offset) });
+  return tokens.length ? tokens : [{ _tag: "static", value: segment }];
+}
+function wholeSegmentParam(tokens) {
+  return tokens.length === 1 && tokens[0]?._tag === "param" ? tokens[0].param : null;
+}
+function segmentRanks(pattern) {
+  return toSegments(pattern).map((segment) => {
+    const tokens = parsePageSegment(segment);
+    const params = tokens.filter((token) => token._tag === "param");
+    if (!params.length)
+      return 6;
+    const hasStatic = tokens.some((token) => token._tag === "static");
+    if (hasStatic)
+      return params.some((token) => token.param.optional) ? 3 : 4;
+    const param = params[0].param;
+    if (param.catchAll)
+      return param.optional ? -1 : 0;
+    return param.optional ? 1 : 2;
+  });
+}
+function compareSpecificity(a, b) {
+  const length = Math.min(a.length, b.length);
+  for (let i = 0; i < length; i++) {
+    const diff = b[i] - a[i];
+    if (diff !== 0)
+      return diff;
+  }
+  return a.length - b.length;
+}
+function matchSegmentTokens(tokens, path) {
+  const failedStates = /* @__PURE__ */ new Set();
+  function visit(index, offset, params) {
+    const state = index * (path.length + 1) + offset;
+    if (failedStates.has(state))
+      return null;
+    if (index === tokens.length) {
+      if (offset === path.length)
+        return params;
+      failedStates.add(state);
+      return null;
+    }
+    const token = tokens[index];
+    if (token._tag === "static") {
+      const matched = path.startsWith(token.value, offset) ? visit(index + 1, offset + token.value.length, params) : null;
+      if (!matched)
+        failedStates.add(state);
+      return matched;
+    }
+    const minimumEnd = token.param.optional ? offset : offset + 1;
+    for (let end = minimumEnd; end <= path.length; end++) {
+      const value = path.slice(offset, end);
+      const nextParams = value ? { ...params, [token.param.name]: value } : params;
+      const matched = visit(index + 1, end, nextParams);
+      if (matched)
+        return matched;
+    }
+    failedStates.add(state);
+    return null;
+  }
+  return visit(0, 0, {});
+}
+function matchPagePattern(pattern, path) {
+  const patternSegments = toSegments(pattern);
+  const pathSegments = toSegments(path);
+  const failedStates = /* @__PURE__ */ new Set();
+  function visit(patternIndex, pathIndex, params) {
+    const state = patternIndex * (pathSegments.length + 1) + pathIndex;
+    if (failedStates.has(state))
+      return null;
+    if (patternIndex === patternSegments.length) {
+      if (pathIndex === pathSegments.length)
+        return params;
+      failedStates.add(state);
+      return null;
+    }
+    const tokens = parsePageSegment(patternSegments[patternIndex]);
+    const param = wholeSegmentParam(tokens);
+    if (param?.catchAll) {
+      const minimumEnd = param.optional ? pathIndex : pathIndex + 1;
+      for (let end = pathSegments.length; end >= minimumEnd; end--) {
+        const value = pathSegments.slice(pathIndex, end).join("/");
+        const nextParams = value ? { ...params, [param.name]: value } : params;
+        const matched2 = visit(patternIndex + 1, end, nextParams);
+        if (matched2)
+          return matched2;
+      }
+      failedStates.add(state);
+      return null;
+    }
+    const segment = pathSegments[pathIndex];
+    if (segment !== void 0) {
+      const segmentParams = matchSegmentTokens(tokens, segment);
+      if (segmentParams) {
+        const matched2 = visit(patternIndex + 1, pathIndex + 1, { ...params, ...segmentParams });
+        if (matched2)
+          return matched2;
+      }
+    }
+    const matched = param?.optional ? visit(patternIndex + 1, pathIndex, params) : null;
+    if (!matched)
+      failedStates.add(state);
+    return matched;
+  }
+  return visit(0, 0, {});
+}
+function fillPagePattern(pattern, params) {
+  const filled = [];
+  for (const segment of toSegments(pattern)) {
+    const tokens = parsePageSegment(segment);
+    let value = "";
+    for (const token of tokens) {
+      if (token._tag === "static") {
+        value += token.value;
+        continue;
+      }
+      const paramValue = params[token.param.name];
+      if (paramValue === void 0) {
+        if (token.param.optional)
+          continue;
+        return null;
+      }
+      value += paramValue;
+    }
+    if (value)
+      filled.push(value);
+  }
+  if (!filled.length)
+    return "/";
+  return `/${filled.join("/")}${pattern.endsWith("/") ? "/" : ""}`;
+}
+function alternatesForEntry(localePaths, params, i18n, context) {
+  const untranslated = localePaths[i18n.defaultLocale];
+  const alternates = [];
+  const defaultLocale = i18n.locales.find((locale) => locale.code === i18n.defaultLocale);
+  for (const l of i18n.locales) {
+    const pattern = localePaths[l.code] ?? untranslated;
+    if (localePaths[l.code] === false)
+      continue;
+    if (typeof pattern !== "string")
+      continue;
+    const path = fillPagePattern(pattern, params);
+    if (path === null)
+      continue;
+    const domain = resolveCanonicalLocaleDomain(l, defaultLocale);
+    alternates.push({
+      code: l.code,
+      hreflang: l.hreflang || l.code,
+      path: localePath(path, l.code, i18n, { host: domain || context.host }),
+      ...domain ? { domain } : {}
+    });
+  }
+  return alternates.length ? alternates : null;
+}
+function alternatesFromPages(basePath, routePath, locale, i18n, context) {
+  const pages = i18n.pages;
+  const hasDomainLocales = i18n.differentDomains || i18n.multiDomainLocales;
+  const hasContextLocale = !!context.locale && i18n.locales.some((locale2) => locale2.code === context.locale);
+  if (!pages)
+    return null;
+  const allowLocalized = i18n.strategy !== "no_prefix" || hasDomainLocales || hasContextLocale;
+  const matches = [];
+  for (const page of Object.values(pages)) {
+    if (!page)
+      continue;
+    if (isUnlocalizedLocalePage(page)) {
+      if (matchesUnlocalizedLocalePage(page, routePath))
+        matches.push({ _tag: "unlocalized", ranks: segmentRanks(page.path) });
+      continue;
+    }
+    if (!allowLocalized)
+      continue;
+    const pattern = page[locale];
+    if (!pattern)
+      continue;
+    const params = matchPagePattern(pattern, basePath);
+    if (params)
+      matches.push({ _tag: "localized", ranks: segmentRanks(pattern), localePaths: page, params });
+  }
+  matches.sort((a, b) => compareSpecificity(a.ranks, b.ranks));
+  for (const match of matches) {
+    if (match._tag === "unlocalized") {
+      const defaultLocale = i18n.locales.find((locale2) => locale2.code === i18n.defaultLocale);
+      if (defaultLocale) {
+        const domain = resolveCanonicalLocaleDomain(defaultLocale);
+        return [{
+          code: defaultLocale.code,
+          hreflang: defaultLocale.hreflang || defaultLocale.code,
+          path: routePath,
+          ...domain ? { domain } : {}
+        }];
+      }
+      continue;
+    }
+    const alternates = alternatesForEntry(match.localePaths, match.params, i18n, context);
+    if (alternates)
+      return alternates;
+  }
+  return null;
+}
+function resolveLocaleAlternates(route, i18n, context = {}) {
+  const { locale, basePath } = resolveLocaleFromRoute(route, i18n, context);
+  const { pathname, suffix } = splitRouteSuffix(basePath);
+  const { pathname: routePathname } = splitRouteSuffix(route);
+  const translated = alternatesFromPages(pathname, routePathname, locale, i18n, context);
+  if (translated) {
+    return {
+      _tag: "pages",
+      alternates: translated.map((alternate) => ({ ...alternate, path: `${alternate.path}${suffix}` }))
+    };
+  }
+  const defaultLocale = i18n.locales.find((locale2) => locale2.code === i18n.defaultLocale);
+  return {
+    _tag: "strategy",
+    alternates: i18n.locales.map((l) => {
+      const domain = resolveCanonicalLocaleDomain(l, defaultLocale);
+      return {
+        code: l.code,
+        hreflang: l.hreflang || l.code,
+        path: localePath(basePath, l.code, i18n, { host: domain || context.host }),
+        ...domain ? { domain } : {}
+      };
+    })
+  };
+}
+function computeLocaleAlternates(route, i18n, context = {}) {
+  return resolveLocaleAlternates(route, i18n, context).alternates;
+}
+
+const i18nStrategies = /* @__PURE__ */ new Set(["no_prefix", "prefix_except_default", "prefix", "prefix_and_default"]);
+function parseRuntimeI18nConfig(input) {
+  if (!input || typeof input !== "object")
+    return null;
+  const config = input;
+  if (!Array.isArray(config.locales))
+    return null;
+  const locales = config.locales.flatMap((locale) => {
+    const code = typeof locale === "string" ? locale : locale && typeof locale === "object" && typeof locale.code === "string" ? locale.code : null;
+    return code ? [{ code, hreflang: code }] : [];
+  });
+  if (!locales.length)
+    return null;
+  const defaultLocale = typeof config.defaultLocale === "string" ? config.defaultLocale : locales[0].code;
+  const strategy = typeof config.strategy === "string" && i18nStrategies.has(config.strategy) ? config.strategy : "prefix";
+  return { defaultLocale, locales, strategy };
+}
+function getPathRobotConfig(e, options) {
+  const runtimeConfig = useRuntimeConfig(e);
+  const { robotsDisabledValue, robotsEnabledValue, isNuxtContentV2 } = useRuntimeConfigNuxtRobots(e);
+  if (!options?.skipSiteIndexable) {
+    if (!getSiteRobotConfig(e).indexable) {
+      return {
+        rule: robotsDisabledValue,
+        indexable: false,
+        debug: {
+          source: "Site Config"
+        }
+      };
+    }
+  }
+  const path = options?.path || e.path;
+  let userAgent = options?.userAgent;
+  if (!userAgent) {
+    try {
+      userAgent = getRequestHeader(e, "User-Agent");
+    } catch {
+    }
+  }
+  const nitroApp = useNitroApp();
+  const groups = [
+    // run explicit user agent matching first
+    ...nitroApp._robots.ctx.groups.filter((g) => {
+      if (userAgent) {
+        return g.userAgent.some((ua) => !!ua && userAgent.toLowerCase().includes(ua.toLowerCase()));
+      }
+      return false;
+    }),
+    // run wildcard matches second
+    ...nitroApp._robots.ctx.groups.filter((g) => g.userAgent.includes("*"))
+  ];
+  for (const group of groups) {
+    if (!options?.skipSiteIndexable && group._indexable === false) {
+      return {
+        indexable: false,
+        rule: robotsDisabledValue,
+        debug: {
+          source: "/robots.txt",
+          line: JSON.stringify(group)
+        }
+      };
+    }
+    const rules = options?.skipSiteIndexable ? (group._rules || []).filter((r) => r.pattern !== "/") : group._rules || [];
+    const robotsTxtRule = matchPathToRule(path, rules);
+    if (robotsTxtRule) {
+      if (!robotsTxtRule.allow) {
+        return {
+          indexable: false,
+          rule: robotsDisabledValue,
+          debug: {
+            source: "/robots.txt",
+            line: `Disallow: ${robotsTxtRule.pattern}`
+          }
+        };
+      }
+      break;
+    }
+  }
+  if (isNuxtContentV2 && nitroApp._robots?.nuxtContentUrls?.has(withoutTrailingSlash(path))) {
+    return {
+      indexable: false,
+      rule: robotsDisabledValue,
+      debug: {
+        source: "Nuxt Content"
+      }
+    };
+  }
+  const { pageMetaRobots } = useRuntimeConfigNuxtRobots(e);
+  const pageMetaRule = pageMetaRobots?.[withoutTrailingSlash(path)];
+  if (typeof pageMetaRule !== "undefined") {
+    const normalised = normaliseRobotsRouteRule({ robots: pageMetaRule });
+    if (normalised && (typeof normalised.allow !== "undefined" || typeof normalised.rule !== "undefined")) {
+      return {
+        indexable: normalised.allow ?? false,
+        rule: normalised.rule || (normalised.allow ? robotsEnabledValue : robotsDisabledValue),
+        debug: {
+          source: "Page Meta"
+        }
+      };
+    }
+  }
+  nitroApp._robotsRuleMatcher = nitroApp._robotsRuleMatcher || createNitroRouteRuleMatcher$1(runtimeConfig);
+  let robotRouteRules = nitroApp._robotsRuleMatcher(path);
+  let routeRulesPath = path;
+  const i18nConfig = parseRuntimeI18nConfig(runtimeConfig.public?.i18n);
+  if (i18nConfig && typeof robotRouteRules.robots === "undefined") {
+    const resolvedRoute = resolveLocaleFromRoute(routeRulesPath, i18nConfig);
+    if (resolvedRoute.basePath !== routeRulesPath) {
+      routeRulesPath = resolvedRoute.basePath;
+      robotRouteRules = nitroApp._robotsRuleMatcher(routeRulesPath);
+    }
+  }
+  const routeRules = normaliseRobotsRouteRule(robotRouteRules);
+  if (routeRules && (typeof routeRules.allow !== "undefined" || typeof routeRules.rule !== "undefined")) {
+    return {
+      indexable: routeRules.allow ?? false,
+      rule: routeRules.rule || (routeRules.allow ? robotsEnabledValue : robotsDisabledValue),
+      debug: {
+        source: "Route Rules"
+      }
+    };
+  }
+  return {
+    indexable: true,
+    rule: robotsEnabledValue
+  };
+}
+
+const _BM153P = defineEventHandler(async (e) => {
+  if (e.path === "/robots.txt" || e.path.startsWith("/__") || e.path.startsWith("/api") || e.path.startsWith("/_nuxt"))
+    return;
+  const nuxtRobotsConfig = useRuntimeConfigNuxtRobots(e);
+  if (nuxtRobotsConfig) {
+    const { header } = nuxtRobotsConfig;
+    const robotConfig = getPathRobotConfig(e, { skipSiteIndexable: Boolean(getQuery(e)?.mockProductionEnv) });
+    if (header) {
+      setHeader(e, "X-Robots-Tag", robotConfig.rule);
+    }
+    e.context.robots = robotConfig;
+  }
+});
+
+const staticConfig = {"isI18nMapped":false,"sitemapName":"sitemap.xml","isMultiSitemap":false,"excludeAppSources":[],"cacheMaxAgeSeconds":600,"experimentalStreaming":false,"autoLastmod":false,"defaultSitemapsChunkSize":1000,"minify":false,"sortEntries":true,"discoverImages":true,"discoverVideos":true,"sitemapsPathPrefix":"/__sitemap__/","isNuxtContentDocumentDriven":false,"xsl":"/__sitemap__/style.xsl","xslTips":true,"xslColumns":[{"label":"URL","width":"50%"},{"label":"Images","width":"25%","select":"count(image:image)"},{"label":"Last Updated","width":"25%","select":"concat(substring(sitemap:lastmod,0,11),concat(' ', substring(sitemap:lastmod,12,5)),concat(' ', substring(sitemap:lastmod,20,6)))"}],"credits":true,"version":"8.5.0","sitemaps":{"sitemap.xml":{"sitemapName":"sitemap.xml","route":"sitemap.xml","defaults":{},"include":[],"exclude":["/_**","/_nuxt/**"],"includeAppSources":true}}};
+
+const logger = createModuleLogger("@nuxt/sitemap");
+const XML_ENTITIES = {
+  "&": "&amp;",
+  "<": "&lt;",
+  ">": "&gt;",
+  '"': "&quot;",
+  "'": "&apos;"
+};
+const XML_SPECIAL_CHARS_RE = /[&<>"']/g;
+const HAS_XML_SPECIAL_CHARS_RE = /[&<>"']/;
+function xmlEscape(value) {
+  const input = String(value);
+  return HAS_XML_SPECIAL_CHARS_RE.test(input) ? input.replace(XML_SPECIAL_CHARS_RE, (char) => XML_ENTITIES[char]) : input;
+}
+const merger = createDefu((obj, key, value) => {
+  if (Array.isArray(obj[key]) && Array.isArray(value))
+    obj[key] = Array.from(/* @__PURE__ */ new Set([...obj[key], ...value]));
+  return obj[key];
+});
+function mergeOnKey(arr, key, onMerge) {
+  if (arr.length < 2)
+    return arr;
+  const seen = /* @__PURE__ */ new Map();
+  let resultLength = 0;
+  for (const item of arr) {
+    const k = item[key];
+    if (seen.has(k)) {
+      const existingIndex = seen.get(k);
+      onMerge?.(item[key]);
+      arr[existingIndex] = merger(item, arr[existingIndex]);
+    } else {
+      seen.set(k, resultLength);
+      arr[resultLength++] = item;
+    }
+  }
+  arr.length = resultLength;
+  return arr;
+}
+function splitForLocales(path, locales) {
+  const start = path.charCodeAt(0) === 47 ? 1 : 0;
+  const end = path.indexOf("/", start);
+  const prefix = path.slice(start, end === -1 ? path.length : end);
+  const hasLocale = locales instanceof Set ? locales.has(prefix) : locales.includes(prefix);
+  if (prefix && hasLocale) {
+    const prefixEnd = start + prefix.length;
+    return [prefix, start === 1 ? path.slice(prefixEnd) : path];
+  }
+  return [null, path];
+}
+function toRuntimeI18nConfig(i18n) {
+  return {
+    ...i18n,
+    // Sitemap transforms keep the unprefixed default URL alongside Nuxt's prefixed route.
+    strategy: i18n.strategy === "prefix_and_default" ? "prefix_except_default" : i18n.strategy,
+    pages: i18n.pages && Object.fromEntries(
+      Object.entries(i18n.pages).map(([pageName, pageLocales]) => [
+        pageName,
+        Object.fromEntries(i18n.locales.map((locale) => {
+          const configuredPath = pageLocales[locale.code];
+          return [locale.code, configuredPath === void 0 ? withLeadingSlash(pageName) : configuredPath];
+        }))
+      ])
+    ),
+    locales: i18n.locales.map((locale) => ({
+      ...locale,
+      hreflang: locale._hreflang
+    }))
+  };
+}
+function localeAlternateHref(alternate) {
+  return alternate.domain ? joinURL(withHttps(alternate.domain), alternate.path) : alternate.path;
+}
+function resolveI18nRouteEntries(route, i18n, includeHref = () => true) {
+  const runtimeConfig = toRuntimeI18nConfig(i18n);
+  const currentLocale = resolveLocaleFromRoute(route, runtimeConfig).locale;
+  const alternates = computeLocaleAlternates(route, runtimeConfig, { locale: currentLocale });
+  const localizedAlternates = alternates.map((alternate) => ({
+    alternate,
+    href: localeAlternateHref(alternate)
+  }));
+  const defaultHref = localizedAlternates.find(({ alternate }) => alternate.code === i18n.defaultLocale)?.href;
+  const sitemapAlternatives = [
+    ...defaultHref && includeHref(defaultHref) ? [{ hreflang: "x-default", href: defaultHref }] : [],
+    ...localizedAlternates.filter(({ href }) => includeHref(href)).map(({ alternate, href }) => ({ hreflang: alternate.hreflang, href }))
+  ];
+  return localizedAlternates.flatMap(({ alternate, href }) => {
+    const locale = i18n.locales.find((locale2) => locale2.code === alternate.code);
+    return locale ? [{ locale, loc: href, alternatives: sitemapAlternatives }] : [];
+  });
+}
+function resolveI18nSitemapLocaleKey(sitemapName, localeSitemapKeys) {
+  let best = null;
+  for (const key of localeSitemapKeys) {
+    if (sitemapName === key || sitemapName.startsWith(`${key}-`)) {
+      if (best === null || key.length > best.length)
+        best = key;
+    }
+  }
+  return best;
+}
+const StringifiedRegExpPattern = /\/(.*?)\/([gimsuy]*)$/;
+function normalizeRuntimeFilters(input) {
+  return (input || []).map((rule) => {
+    if (rule instanceof RegExp || typeof rule === "string")
+      return rule;
+    const match = rule.regex.match(StringifiedRegExpPattern);
+    if (match)
+      return new RegExp(match[1], match[2]);
+    return false;
+  }).filter(Boolean);
+}
+function createPathFilter(options = {}, baseURL) {
+  const urlFilter = createFilter({
+    include: normalizeRuntimeFilters(options.include),
+    exclude: normalizeRuntimeFilters(options.exclude)
+  });
+  const hasBase = baseURL !== "/";
+  return (loc, pathname) => {
+    let path = pathname;
+    if (typeof path !== "string") {
+      try {
+        path = parseURL(loc).pathname;
+      } catch {
+        return false;
+      }
+    }
+    if (hasBase)
+      path = withoutBase(path, baseURL);
+    return urlFilter(withLeadingSlash(path));
+  };
+}
+
+const SERVER_CACHE_MAX_AGE$3 = staticConfig.cacheMaxAgeSeconds;
+function dynamicRuntimeConfig(e) {
+  return useRuntimeConfig(e).sitemap;
+}
+function copyStaticSitemaps() {
+  return Object.fromEntries(
+    Object.entries(staticConfig.sitemaps).map(([name, sitemap]) => [name, {
+      ...sitemap,
+      include: normalizeRuntimeFilters("include" in sitemap ? sitemap.include : void 0),
+      exclude: normalizeRuntimeFilters("exclude" in sitemap ? sitemap.exclude : void 0)
+    }])
+  );
+}
+function useSitemapRuntimeConfig(e) {
+  return Object.freeze({
+    ...staticConfig,
+    sitemaps: copyStaticSitemaps(),
+    ...dynamicRuntimeConfig(e)
+  });
+}
+function serializeFilters(filters) {
+  if (!filters?.length)
+    return void 0;
+  return filters.map((f) => {
+    if (f instanceof RegExp)
+      return { regex: `/${f.source}/${f.flags}` };
+    return f;
+  });
+}
+async function resolveSitemapSitemaps(e, nitro) {
+  const ctx = { sitemaps: copyStaticSitemaps(), event: e };
+  await nitro.hooks.callHook("sitemap:sitemaps-resolved", ctx);
+  const sitemaps = { ...ctx.sitemaps };
+  for (const name of Object.keys(sitemaps)) {
+    const sitemap = { ...sitemaps[name] };
+    if (typeof sitemap.urls === "function")
+      sitemap.urls = await sitemap.urls();
+    sitemap.include = serializeFilters(sitemap.include);
+    sitemap.exclude = serializeFilters(sitemap.exclude);
+    sitemaps[name] = sitemap;
+  }
+  return sitemaps;
+}
+const resolveSitemapSitemapsCached = defineCachedFunction(
+  resolveSitemapSitemaps,
+  {
+    name: "sitemap:runtime-sitemaps",
+    group: "sitemap",
+    maxAge: SERVER_CACHE_MAX_AGE$3,
+    base: "sitemap",
+    // nitro calls getKey with the full fn args (event, nitro)
+    getKey: (e) => {
+      const host = e && (getHeader(e, "host") || getHeader(e, "x-forwarded-host")) || "";
+      const proto = e && getHeader(e, "x-forwarded-proto") || "https";
+      return `runtime-sitemaps-${proto}-${host}`;
+    },
+    swr: true
+  }
+);
+async function useResolvedSitemapRuntimeConfig(e) {
+  const maxAge = dynamicRuntimeConfig(e)?.cacheMaxAgeSeconds ?? staticConfig.cacheMaxAgeSeconds;
+  const shouldCache = typeof maxAge === "number" && maxAge > 0;
+  const sitemaps = shouldCache ? await resolveSitemapSitemapsCached(e, useNitroApp()) : await resolveSitemapSitemaps(e, useNitroApp());
+  return Object.freeze({
+    ...staticConfig,
+    sitemaps,
+    ...dynamicRuntimeConfig(e)
+  });
+}
+
+const _pSVT3Q = defineEventHandler(async (e) => {
+  const fixPath = createSitePathResolver(e, { absolute: false, withBase: true });
+  const { sitemapName: fallbackSitemapName, cacheMaxAgeSeconds, version, xslColumns, xslTips } = useSitemapRuntimeConfig();
+  setHeader(e, "Content-Type", "application/xslt+xml");
+  if (cacheMaxAgeSeconds)
+    setHeader(e, "Cache-Control", `public, max-age=${cacheMaxAgeSeconds}, must-revalidate`);
+  else
+    setHeader(e, "Cache-Control", `no-cache, no-store`);
+  const { name: siteName, url: siteUrl } = getSiteConfig(e);
+  const referrer = getHeader(e, "Referer") || "/";
+  const referrerPath = parseURL(referrer).pathname;
+  const isNotIndexButHasIndex = referrerPath !== "/sitemap.xml" && referrerPath !== "/sitemap_index.xml" && referrerPath.endsWith(".xml");
+  const sitemapName = parseURL(referrer).pathname.split("/").pop()?.split("-sitemap")[0] || fallbackSitemapName;
+  const title = `${siteName}${sitemapName !== "sitemap.xml" ? ` - ${sitemapName === "sitemap_index.xml" ? "index" : sitemapName}` : ""}`.replace(/&/g, "&amp;");
+  getQuery$1(referrer).canonical;
+  const debugUrl = xmlEscape(withQuery("/__sitemap__/debug.json", { sitemap: sitemapName }));
+  xmlEscape(referrerPath);
+  xmlEscape(withQuery(referrerPath, { canonical: "" }));
+  const fetchErrors = [];
+  const xslQuery = getQuery(e);
+  if (xslQuery.error_messages) {
+    const errorMessages = xslQuery.error_messages;
+    const errorUrls = xslQuery.error_urls;
+    if (errorMessages) {
+      const messages = Array.isArray(errorMessages) ? errorMessages : [errorMessages];
+      const urls = Array.isArray(errorUrls) ? errorUrls : errorUrls ? [errorUrls] : [];
+      messages.forEach((msg, i) => {
+        const errorParts = [xmlEscape(msg)];
+        if (urls[i])
+          errorParts.push(xmlEscape(urls[i]));
+        fetchErrors.push(`<span class="error-item">${errorParts.join(" \u2014 ")}</span>`);
+      });
+    }
+  }
+  const hasRuntimeErrors = fetchErrors.length > 0;
+  let columns = [...xslColumns];
+  if (!columns.length) {
+    columns = [
+      { label: "URL", width: "50%" },
+      { label: "Images", width: "25%", select: "count(image:image)" },
+      { label: "Last Updated", width: "25%", select: "concat(substring(sitemap:lastmod,0,11),concat(' ', substring(sitemap:lastmod,12,5)),concat(' ', substring(sitemap:lastmod,20,6)))" }
+    ];
+  }
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="2.0"
+                xmlns:html="http://www.w3.org/TR/REC-html40"
+                xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+                xmlns:sitemap="http://www.sitemaps.org/schemas/sitemap/0.9"
+                xmlns:xhtml="http://www.w3.org/1999/xhtml"
+                xmlns:news="http://www.google.com/schemas/sitemap-news/0.9"
+                xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+  <xsl:output method="html" version="1.0" encoding="UTF-8" indent="yes"/>
+  <xsl:template match="/">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <title>XML Sitemap</title>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+        <style type="text/css">
+          :root {
+            --accent: #00dc82;
+            --accent-hover: #00b86b;
+            --bg: #0a0a0a;
+            --bg-elevated: #141414;
+            --bg-subtle: #1a1a1a;
+            --border: #262626;
+            --border-subtle: #1f1f1f;
+            --text: #e5e5e5;
+            --text-muted: #737373;
+            --text-faint: #525252;
+            --error: #ef4444;
+            --error-bg: rgba(239,68,68,0.1);
+            --warning: #f59e0b;
+          }
+          * { box-sizing: border-box; }
+          body {
+            font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 13px;
+            color: var(--text);
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+          }
+          a { color: inherit; transition: color 0.15s; }
+          a:hover { color: var(--accent); }
+
+          /* Debug bar (dev only) */
+          .debug-bar {
+            position: fixed;
+            bottom: 0.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 0 1rem;
+            height: 2.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            z-index: 100;
+            font-size: 11px;
+          }
+          .debug-bar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+          }
+          .debug-bar-brand:hover { color: var(--text); }
+          .debug-bar-brand svg { flex-shrink: 0; }
+          .debug-bar-hint {
+            color: var(--text-faint);
+            margin-right: auto;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .debug-bar-hint code {
+            background: var(--bg-subtle);
+            padding: 0.1rem 0.3rem;
+            border-radius: 3px;
+            font-size: 10px;
+          }
+          .mode-badge {
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+          }
+          .mode-dev { background: rgba(245,158,11,0.15); color: var(--warning); }
+          .mode-prod { background: rgba(0,220,130,0.12); color: var(--accent); }
+          .mode-toggle {
+            display: inline-flex;
+            border-radius: 4px;
+            overflow: hidden;
+            background: var(--bg-subtle);
+            padding: 2px;
+            gap: 1px;
+          }
+          .mode-toggle a {
+            padding: 0.2rem 0.4rem;
+            font-size: 9px;
+            font-weight: 500;
+            text-decoration: none;
+            color: var(--text-muted);
+            border-radius: 2px;
+            transition: all 0.15s;
+          }
+          .mode-toggle a:hover { color: var(--text); }
+          .mode-toggle a.active {
+            background: var(--accent);
+            color: #0a0a0a;
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 500;
+            transition: all 0.15s;
+          }
+          .btn-primary {
+            background: var(--accent);
+            color: #0a0a0a;
+          }
+          .btn-primary:hover { background: var(--accent-hover); color: #0a0a0a; }
+          .btn svg { width: 12px; height: 12px; }
+
+          /* Error banner */
+          .error-banner {
+            background: var(--error-bg);
+            border-bottom: 1px solid rgba(239,68,68,0.2);
+            padding: 0.75rem 1.5rem;
+            color: #fca5a5;
+            font-size: 12px;
+          }
+          .error-banner strong { color: var(--error); }
+          .error-item { display: block; margin-top: 0.375rem; color: #fca5a5; }
+          .error-debug-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            margin-top: 0.625rem;
+            padding: 0.25rem 0.5rem;
+            background: var(--error);
+            color: #fff;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: background 0.15s;
+          }
+          .error-debug-link:hover { background: #dc2626; color: #fff; }
+
+          /* Main content */
+          .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+          }
+          .header {
+            margin-bottom: 1.25rem;
+          }
+          .header h1 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 0 0 0.25rem 0;
+            color: var(--text);
+          }
+          .header-meta {
+            color: var(--text-muted);
+            font-size: 12px;
+          }
+          .header-meta a {
+            color: var(--text-muted);
+            text-decoration: underline;
+            text-decoration-color: var(--border);
+            text-underline-offset: 2px;
+          }
+          .header-meta a:hover { color: var(--accent); text-decoration-color: var(--accent); }
+
+          /* Table */
+          .table-wrap {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            background: var(--bg-elevated);
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th {
+            text-align: left;
+            padding: 0.625rem 1rem;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border);
+          }
+          td {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 12px;
+            color: var(--text);
+          }
+          tr:last-child td { border-bottom: none; }
+          tr:hover td { background: rgba(255,255,255,0.02); }
+          td a {
+            text-decoration: none;
+            word-break: break-all;
+            color: var(--text);
+          }
+          td a:hover { color: var(--accent); }
+          .inline-warning {
+            font-size: 11px;
+            color: var(--warning);
+            margin-top: 0.25rem;
+            line-height: 1.4;
+          }
+          .inline-warning::before {
+            content: "\u26A0 ";
+          }
+          .count {
+            display: inline-block;
+            min-width: 1.25rem;
+            padding: 0.125rem 0.375rem;
+            background: var(--bg-subtle);
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-variant-numeric: tabular-nums;
+          }
+          .count:empty::before { content: "0"; }
+
+          /* Light mode */
+          @media (prefers-color-scheme: light) {
+            :root {
+              --accent: #00a963;
+              --accent-hover: #008f54;
+              --bg: #ffffff;
+              --bg-elevated: #f5f5f5;
+              --bg-subtle: #ebebeb;
+              --border: #d4d4d4;
+              --border-subtle: #e5e5e5;
+              --text: #171717;
+              --text-muted: #525252;
+              --text-faint: #737373;
+              --error: #dc2626;
+              --error-bg: rgba(220,38,38,0.08);
+              --warning: #b45309;
+            }
+            tr:hover td { background: rgba(0,0,0,0.02); }
+            .btn-primary { color: #fff; }
+            .btn-primary:hover { color: #fff; }
+            .mode-toggle a.active { color: #fff; }
+            .error-banner { color: #991b1b; }
+            .error-item { color: #b91c1c; }
+            .error-debug-link { color: #fff; }
+            .error-debug-link:hover { color: #fff; }
+          }
+
+          .debug-bar-version {
+            color: var(--text-faint);
+            font-size: 10px;
+          }
+
+          /* Responsive */
+          @media (max-width: 640px) {
+            .debug-bar { padding: 0 0.75rem; gap: 0.5rem; width: 95%; }
+            .debug-bar-brand span { display: none; }
+            .debug-bar-hint { display: none; }
+            .debug-bar-version { display: none; }
+            .mode-badge { display: none; }
+            .container { padding: 1rem; }
+            th, td { padding: 0.5rem 0.75rem; }
+          }
+          ${""}
+        </style>
+      </head>
+      <body>
+        ${hasRuntimeErrors ? `<div class="error-banner">
+            <strong>Sitemap Generation Errors</strong>
+            ${fetchErrors.join("")}
+            <a href="${debugUrl}" target="_blank" class="error-debug-link">View Debug Info \u2192</a>
+          </div>` : ""}
+        <div class="container">
+          <div class="header">
+            <h1>${xmlEscape(title)}</h1>
+            <div class="header-meta">
+              ${isNotIndexButHasIndex ? `Part of <a href="${xmlEscape(fixPath("/sitemap_index.xml"))}">${xmlEscape(fixPath("/sitemap_index.xml"))}</a> \xB7 ` : ""}
+              <xsl:if test="count(sitemap:sitemapindex/sitemap:sitemap) &gt; 0">
+                <xsl:value-of select="count(sitemap:sitemapindex/sitemap:sitemap)"/> sitemaps
+              </xsl:if>
+              <xsl:if test="count(sitemap:sitemapindex/sitemap:sitemap) &lt; 1">
+                <xsl:value-of select="count(sitemap:urlset/sitemap:url)"/> URLs
+              </xsl:if>
+            </div>
+          </div>
+          <xsl:if test="count(sitemap:sitemapindex/sitemap:sitemap) &gt; 0">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:70%">Sitemap</th>
+                    <th style="width:30%">Last Modified</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <xsl:for-each select="sitemap:sitemapindex/sitemap:sitemap">
+                    <xsl:variable name="sitemapURL">
+                      <xsl:value-of select="sitemap:loc"/>
+                    </xsl:variable>
+                    <tr>
+                      <td>
+                        <a href="{$sitemapURL}">
+                          <xsl:value-of select="sitemap:loc"/>
+                        </a>
+                      </td>
+                      <td>
+                        <xsl:value-of
+                          select="concat(substring(sitemap:lastmod,0,11),concat(' ', substring(sitemap:lastmod,12,5)),concat(' ', substring(sitemap:lastmod,20,6)))"/>
+                      </td>
+                    </tr>
+                  </xsl:for-each>
+                </tbody>
+              </table>
+            </div>
+          </xsl:if>
+          <xsl:if test="count(sitemap:sitemapindex/sitemap:sitemap) &lt; 1">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    ${columns.map((c) => `<th style="width:${c.width}">${c.label}</th>`).join("\n")}
+                  </tr>
+                </thead>
+                <tbody>
+                  <xsl:for-each select="sitemap:urlset/sitemap:url">
+                    <tr>
+                      <td>
+                        <xsl:variable name="itemURL">
+                          <xsl:value-of select="sitemap:loc"/>
+                        </xsl:variable>
+                        <a href="{$itemURL}">
+                          <xsl:value-of select="sitemap:loc"/>
+                        </a>
+                        ${""}
+                      </td>
+                      ${columns.filter((c) => c.label !== "URL").map((c) => `<td><span class="count"><xsl:value-of select="${c.select}"/></span></td>`).join("\n")}
+                    </tr>
+                  </xsl:for-each>
+                </tbody>
+              </table>
+            </div>
+          </xsl:if>
+        </div>
+        ${""}
+      </body>
+    </html>
+  </xsl:template>
+</xsl:stylesheet>
+`;
+});
+
+const DEFAULT_XML_STREAM_CHUNK_SIZE = 64 * 1024;
+function createChunkedXmlStream(chunks, targetChunkSize = DEFAULT_XML_STREAM_CHUNK_SIZE) {
+  const iterator = chunks[Symbol.iterator]();
+  const encoder = new TextEncoder();
+  const chunkSize = Math.max(1, Math.floor(targetChunkSize));
+  let complete = false;
+  let pending;
+  let pendingOffset = 0;
+  return new ReadableStream({
+    pull(controller) {
+      if (complete)
+        return;
+      let output = "";
+      while (output.length < chunkSize) {
+        if (!pending) {
+          const next = iterator.next();
+          if (next.done) {
+            complete = true;
+            break;
+          }
+          pending = next.value;
+          pendingOffset = 0;
+          if (!pending)
+            continue;
+        }
+        const remaining = chunkSize - output.length;
+        let end = Math.min(pending.length, pendingOffset + remaining);
+        if (end < pending.length && end > pendingOffset && pending.charCodeAt(end - 1) >= 55296 && pending.charCodeAt(end - 1) <= 56319) {
+          end--;
+          if (end === pendingOffset) {
+            if (output)
+              break;
+            end = Math.min(pending.length, pendingOffset + 2);
+          }
+        }
+        output += pending.slice(pendingOffset, end);
+        pendingOffset = end;
+        if (pendingOffset === pending.length)
+          pending = void 0;
+      }
+      if (output)
+        controller.enqueue(encoder.encode(output));
+      if (complete)
+        controller.close();
+    },
+    cancel() {
+      complete = true;
+      iterator.return?.();
+    }
+  });
+}
+
+function escapeValueForXml(value) {
+  if (value === true || value === false)
+    return value ? "yes" : "no";
+  return xmlEscape(String(value));
+}
+function yesNo(v) {
+  return v === "yes" || v === true ? "yes" : "no";
+}
+const URLSET_OPENING_TAG = '<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1" xmlns:news="http://www.google.com/schemas/sitemap-news/0.9" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd http://www.google.com/schemas/sitemap-image/1.1 http://www.google.com/schemas/sitemap-image/1.1/sitemap-image.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+function buildUrlXml(url, NL, I1, I2, I3, I4) {
+  let xml = `${I1}<url>${NL}`;
+  if (url.loc)
+    xml += `${I2}<loc>${xmlEscape(url.loc)}</loc>${NL}`;
+  if (url.lastmod)
+    xml += `${I2}<lastmod>${xmlEscape(url.lastmod)}</lastmod>${NL}`;
+  if (url.changefreq)
+    xml += `${I2}<changefreq>${xmlEscape(url.changefreq)}</changefreq>${NL}`;
+  if (url.priority !== void 0) {
+    const p = typeof url.priority === "number" ? url.priority : Number.parseFloat(url.priority);
+    xml += `${I2}<priority>${p.toFixed(1)}</priority>${NL}`;
+  }
+  if (url.alternatives) {
+    for (const alt of url.alternatives) {
+      let attrs = "";
+      for (const k in alt) {
+        if (Object.hasOwn(alt, k))
+          attrs += ` ${k}="${xmlEscape(String(alt[k]))}"`;
+      }
+      xml += `${I2}<xhtml:link rel="alternate"${attrs} />${NL}`;
+    }
+  }
+  if (url.images) {
+    for (const img of url.images) {
+      xml += `${I2}<image:image>${NL}${I3}<image:loc>${xmlEscape(img.loc)}</image:loc>${NL}`;
+      if (img.title)
+        xml += `${I3}<image:title>${xmlEscape(img.title)}</image:title>${NL}`;
+      if (img.caption)
+        xml += `${I3}<image:caption>${xmlEscape(img.caption)}</image:caption>${NL}`;
+      if (img.geo_location)
+        xml += `${I3}<image:geo_location>${xmlEscape(img.geo_location)}</image:geo_location>${NL}`;
+      if (img.license)
+        xml += `${I3}<image:license>${xmlEscape(img.license)}</image:license>${NL}`;
+      xml += `${I2}</image:image>${NL}`;
+    }
+  }
+  if (url.videos) {
+    for (const video of url.videos) {
+      xml += `${I2}<video:video>${NL}${I3}<video:title>${xmlEscape(video.title)}</video:title>${NL}`;
+      if (video.thumbnail_loc)
+        xml += `${I3}<video:thumbnail_loc>${xmlEscape(video.thumbnail_loc)}</video:thumbnail_loc>${NL}`;
+      xml += `${I3}<video:description>${xmlEscape(video.description)}</video:description>${NL}`;
+      if (video.content_loc)
+        xml += `${I3}<video:content_loc>${xmlEscape(video.content_loc)}</video:content_loc>${NL}`;
+      if (video.player_loc)
+        xml += `${I3}<video:player_loc>${xmlEscape(video.player_loc)}</video:player_loc>${NL}`;
+      if (video.duration !== void 0)
+        xml += `${I3}<video:duration>${escapeValueForXml(video.duration)}</video:duration>${NL}`;
+      if (video.expiration_date)
+        xml += `${I3}<video:expiration_date>${xmlEscape(video.expiration_date)}</video:expiration_date>${NL}`;
+      if (video.rating !== void 0)
+        xml += `${I3}<video:rating>${escapeValueForXml(video.rating)}</video:rating>${NL}`;
+      if (video.view_count !== void 0)
+        xml += `${I3}<video:view_count>${escapeValueForXml(video.view_count)}</video:view_count>${NL}`;
+      if (video.publication_date)
+        xml += `${I3}<video:publication_date>${xmlEscape(video.publication_date)}</video:publication_date>${NL}`;
+      if (video.family_friendly !== void 0)
+        xml += `${I3}<video:family_friendly>${yesNo(video.family_friendly)}</video:family_friendly>${NL}`;
+      if (video.restriction)
+        xml += `${I3}<video:restriction relationship="${xmlEscape(video.restriction.relationship || "allow")}">${xmlEscape(video.restriction.restriction)}</video:restriction>${NL}`;
+      if (video.platform)
+        xml += `${I3}<video:platform relationship="${xmlEscape(video.platform.relationship || "allow")}">${xmlEscape(video.platform.platform)}</video:platform>${NL}`;
+      if (video.requires_subscription !== void 0)
+        xml += `${I3}<video:requires_subscription>${yesNo(video.requires_subscription)}</video:requires_subscription>${NL}`;
+      if (video.price) {
+        for (const price of video.price) {
+          const c = price.currency ? ` currency="${xmlEscape(price.currency)}"` : "";
+          const t = price.type ? ` type="${xmlEscape(price.type)}"` : "";
+          xml += `${I3}<video:price${c}${t}>${xmlEscape(String(price.price ?? ""))}</video:price>${NL}`;
+        }
+      }
+      if (video.uploader) {
+        const info = video.uploader.info ? ` info="${xmlEscape(video.uploader.info)}"` : "";
+        xml += `${I3}<video:uploader${info}>${xmlEscape(video.uploader.uploader)}</video:uploader>${NL}`;
+      }
+      if (video.live !== void 0)
+        xml += `${I3}<video:live>${yesNo(video.live)}</video:live>${NL}`;
+      if (video.tag) {
+        const tags = Array.isArray(video.tag) ? video.tag : [video.tag];
+        for (const t of tags) xml += `${I3}<video:tag>${xmlEscape(t)}</video:tag>${NL}`;
+      }
+      if (video.category)
+        xml += `${I3}<video:category>${xmlEscape(video.category)}</video:category>${NL}`;
+      if (video.gallery_loc)
+        xml += `${I3}<video:gallery_loc>${xmlEscape(video.gallery_loc)}</video:gallery_loc>${NL}`;
+      xml += `${I2}</video:video>${NL}`;
+    }
+  }
+  if (url.news) {
+    xml += `${I2}<news:news>${NL}${I3}<news:publication>${NL}`;
+    xml += `${I4}<news:name>${xmlEscape(url.news.publication.name)}</news:name>${NL}`;
+    xml += `${I4}<news:language>${xmlEscape(url.news.publication.language)}</news:language>${NL}`;
+    xml += `${I3}</news:publication>${NL}`;
+    if (url.news.title)
+      xml += `${I3}<news:title>${xmlEscape(url.news.title)}</news:title>${NL}`;
+    if (url.news.publication_date)
+      xml += `${I3}<news:publication_date>${xmlEscape(url.news.publication_date)}</news:publication_date>${NL}`;
+    xml += `${I2}</news:news>${NL}`;
+  }
+  xml += `${I1}</url>`;
+  return xml;
+}
+function resolveXmlRenderContext(resolvers, { xsl, minify }, errorInfo) {
+  let xslHref = xsl ? resolvers.relativeBaseUrlResolver(xsl) : false;
+  if (xslHref && errorInfo?.messages.length) {
+    xslHref = withQuery(xslHref, {
+      errors: "true",
+      error_messages: errorInfo.messages,
+      error_urls: errorInfo.urls
+    });
+  }
+  const NL = minify ? "" : "\n";
+  return {
+    xslHref,
+    NL,
+    I1: minify ? "" : "    ",
+    I2: minify ? "" : "        ",
+    I3: minify ? "" : "            ",
+    I4: minify ? "" : "                "
+  };
+}
+function* renderSitemapXmlChunks(urls, resolvers, config, errorInfo) {
+  const { version, credits } = config;
+  const { xslHref, NL, I1, I2, I3, I4 } = resolveXmlRenderContext(resolvers, config, errorInfo);
+  yield xslHref ? `<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="${escapeValueForXml(xslHref)}"?>${NL}` : `<?xml version="1.0" encoding="UTF-8"?>${NL}`;
+  yield URLSET_OPENING_TAG + NL;
+  for (const url of urls) {
+    yield buildUrlXml(url, NL, I1, I2, I3, I4) + NL;
+  }
+  yield "</urlset>";
+  if (credits) {
+    yield `${NL}<!-- XML Sitemap generated by @nuxtjs/sitemap v${version} at ${(/* @__PURE__ */ new Date()).toISOString()} -->`;
+  }
+}
+function urlsToXml(urls, resolvers, config, errorInfo) {
+  const { version, credits } = config;
+  const { xslHref, NL, I1, I2, I3, I4 } = resolveXmlRenderContext(resolvers, config, errorInfo);
+  let xml = xslHref ? `<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type="text/xsl" href="${escapeValueForXml(xslHref)}"?>${NL}` : `<?xml version="1.0" encoding="UTF-8"?>${NL}`;
+  xml += URLSET_OPENING_TAG + NL;
+  for (const url of urls)
+    xml += buildUrlXml(url, NL, I1, I2, I3, I4) + NL;
+  xml += "</urlset>";
+  if (credits)
+    xml += `${NL}<!-- XML Sitemap generated by @nuxtjs/sitemap v${version} at ${(/* @__PURE__ */ new Date()).toISOString()} -->`;
+  return xml;
+}
+function urlsToXmlStream(urls, resolvers, config, errorInfo) {
+  return createChunkedXmlStream(renderSitemapXmlChunks(urls, resolvers, config, errorInfo));
+}
+
+function resolve(s, resolvers) {
+  if (typeof s === "undefined")
+    return void 0;
+  const str = typeof s === "string" ? s : s.toString();
+  if (!resolvers)
+    return str;
+  if (hasProtocol(str, { acceptRelative: true, strict: false }))
+    return resolvers.fixSlashes(str);
+  return resolvers.canonicalUrlResolver(str);
+}
+function removeTrailingSlash(s) {
+  let pathEnd = s.length;
+  const queryIndex = s.indexOf("?");
+  if (queryIndex !== -1)
+    pathEnd = queryIndex;
+  const hashIndex = s.indexOf("#");
+  if (hashIndex !== -1 && hashIndex < pathEnd)
+    pathEnd = hashIndex;
+  return pathEnd > 0 && s.charCodeAt(pathEnd - 1) === 47 ? s.slice(0, pathEnd - 1) + s.slice(pathEnd) : s;
+}
+function preNormalizeEntry(_e, resolvers) {
+  const input = typeof _e === "string" ? { loc: _e } : { ..._e };
+  if (input.url && !input.loc) {
+    input.loc = input.url;
+  }
+  delete input.url;
+  if (typeof input.loc !== "string") {
+    input.loc = "";
+  }
+  const skipEncoding = input._encoded === true;
+  const e = input;
+  e.loc = removeTrailingSlash(e.loc);
+  e._abs = hasProtocol(e.loc, { acceptRelative: false, strict: false });
+  try {
+    e._path = e._abs ? parseURL(e.loc) : parsePath(e.loc);
+  } catch {
+    e._path = null;
+  }
+  if (e._path) {
+    const search = e._path.search;
+    const qs = search && search.length > 1 ? stringifyQuery(parseQuery(search)) : "";
+    const pathname = skipEncoding ? e._path.pathname : encodePath(e._path.pathname);
+    e._relativeLoc = `${pathname}${qs.length ? `?${qs}` : ""}`;
+    if (e._path.host) {
+      e.loc = stringifyParsedURL(e._path);
+    } else {
+      e.loc = e._relativeLoc;
+    }
+  } else if (!skipEncoding && !isEncoded(e.loc)) {
+    e.loc = encodeURI(e.loc);
+  }
+  if (e.loc === "")
+    e.loc = `/`;
+  e.loc = resolve(e.loc, resolvers);
+  e._key = `${e._sitemap || ""}${withoutTrailingSlash(e.loc)}`;
+  return e;
+}
+function isEncoded(url) {
+  try {
+    return url !== decodeURIComponent(url);
+  } catch {
+    return false;
+  }
+}
+function normaliseEntry(_e, defaults, resolvers, cache) {
+  const e = defaults ? defu(_e, defaults) : { ..._e };
+  if (e.lastmod) {
+    const date = cache?.lastmodInput === e.lastmod ? cache.lastmodOutput : normaliseDate(e.lastmod);
+    if (cache && cache.lastmodInput !== e.lastmod) {
+      cache.lastmodInput = e.lastmod;
+      cache.lastmodOutput = date;
+    }
+    if (date)
+      e.lastmod = date;
+    else
+      delete e.lastmod;
+  }
+  if (!e.lastmod)
+    delete e.lastmod;
+  e.loc = resolve(e.loc, resolvers);
+  if (e.alternatives) {
+    const alternatives = e.alternatives.map((a) => ({ ...a }));
+    for (const alt of alternatives) {
+      if (typeof alt.href === "string") {
+        alt.href = resolve(alt.href, resolvers);
+      } else if (typeof alt.href === "object" && alt.href) {
+        alt.href = resolve(alt.href.href, resolvers);
+      }
+    }
+    e.alternatives = mergeOnKey(alternatives, "hreflang");
+  }
+  if (e.images) {
+    const images = e.images.map((i) => ({ ...i }));
+    for (const img of images) {
+      img.loc = resolve(img.loc, resolvers);
+    }
+    e.images = mergeOnKey(images, "loc");
+  }
+  if (e.videos) {
+    const videos = e.videos.map((v) => ({ ...v }));
+    for (const video of videos) {
+      if (video.content_loc) {
+        video.content_loc = resolve(video.content_loc, resolvers);
+      }
+    }
+    e.videos = mergeOnKey(videos, "content_loc");
+  }
+  return e;
+}
+const IS_VALID_W3C_DATE = [
+  /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)$/,
+  /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)$/,
+  /^\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d([+-][0-2]\d:[0-5]\d|Z)$/,
+  /^\d{4}-[01]\d-[0-3]\d$/,
+  /^\d{4}-[01]\d$/,
+  /^\d{4}$/
+];
+function isValidW3CDate(d) {
+  if (!IS_VALID_W3C_DATE.some((r) => r.test(d)))
+    return false;
+  const [year, month, day] = d.slice(0, 10).split("-").map(Number);
+  if (month !== void 0 && (month < 1 || month > 12))
+    return false;
+  if (day !== void 0 && (day < 1 || day > new Date(year, month, 0).getDate()))
+    return false;
+  return true;
+}
+function normaliseDate(d) {
+  if (typeof d === "string") {
+    const tIdx = d.indexOf("T");
+    if (tIdx !== -1) {
+      const t = d.slice(tIdx + 1);
+      if (!t.includes("+") && !t.includes("-") && !t.includes("Z")) {
+        d += "Z";
+      }
+    }
+    if (!isValidW3CDate(d))
+      return false;
+    d = new Date(d);
+    d.setMilliseconds(0);
+    if (Number.isNaN(d.getTime()))
+      return false;
+  }
+  const z = (n) => `0${n}`.slice(-2);
+  const date = `${d.getUTCFullYear()}-${z(d.getUTCMonth() + 1)}-${z(d.getUTCDate())}`;
+  if (d.getUTCHours() > 0 || d.getUTCMinutes() > 0 || d.getUTCSeconds() > 0) {
+    return `${date}T${z(d.getUTCHours())}:${z(d.getUTCMinutes())}:${z(d.getUTCSeconds())}Z`;
+  }
+  return date;
+}
+
+function parseChunkInfo(sitemapName, sitemaps, defaultChunkSize) {
+  defaultChunkSize = defaultChunkSize || 1e3;
+  if (typeof sitemaps.chunks !== "undefined" && !Number.isNaN(Number(sitemapName))) {
+    return {
+      isChunked: true,
+      baseSitemapName: "sitemap",
+      chunkIndex: Number(sitemapName),
+      chunkSize: defaultChunkSize
+    };
+  }
+  if (sitemapName.includes("-")) {
+    const parts = sitemapName.split("-");
+    const lastPart = parts.pop();
+    if (!Number.isNaN(Number(lastPart))) {
+      const baseSitemapName = parts.join("-");
+      const baseSitemap = sitemaps[baseSitemapName];
+      if (baseSitemap && (baseSitemap.chunks || baseSitemap._isChunking)) {
+        const chunkSize = typeof baseSitemap.chunks === "number" ? baseSitemap.chunks : baseSitemap.chunkSize || defaultChunkSize;
+        return {
+          isChunked: true,
+          baseSitemapName,
+          chunkIndex: Number(lastPart),
+          chunkSize
+        };
+      }
+    }
+  }
+  return {
+    isChunked: false,
+    baseSitemapName: sitemapName,
+    chunkIndex: void 0,
+    chunkSize: defaultChunkSize
+  };
+}
+function sliceUrlsForChunk(urls, sitemapName, sitemaps, defaultChunkSize = 1e3) {
+  const chunkInfo = parseChunkInfo(sitemapName, sitemaps, defaultChunkSize);
+  if (chunkInfo.isChunked && chunkInfo.chunkIndex !== void 0) {
+    const startIndex = chunkInfo.chunkIndex * chunkInfo.chunkSize;
+    const endIndex = (chunkInfo.chunkIndex + 1) * chunkInfo.chunkSize;
+    return urls.slice(startIndex, endIndex);
+  }
+  return urls;
+}
+
+const naturalCompare = new Intl.Collator(void 0, { numeric: true }).compare;
+function countPathSegments(loc) {
+  let segments = 1;
+  for (let i = 0; i < loc.length; i++) {
+    if (loc.charCodeAt(i) === 47)
+      segments++;
+  }
+  return segments;
+}
+function sortInPlace(urls) {
+  urls.sort((a, b) => {
+    const aLoc = typeof a === "string" ? a : a.loc;
+    const bLoc = typeof b === "string" ? b : b.loc;
+    const aSegments = countPathSegments(aLoc);
+    const bSegments = countPathSegments(bLoc);
+    if (aSegments !== bSegments) {
+      return aSegments - bSegments;
+    }
+    return naturalCompare(aLoc, bLoc);
+  });
+  return urls;
+}
+
+const changeFrequencies = /* @__PURE__ */ new Set([
+  "always",
+  "hourly",
+  "daily",
+  "weekly",
+  "monthly",
+  "yearly",
+  "never"
+]);
+function readerEntryToSitemapInput(entry) {
+  const priority = entry.priority === void 0 ? void 0 : Number.parseFloat(entry.priority);
+  const changefreq = entry.changefreq && changeFrequencies.has(entry.changefreq) ? entry.changefreq : void 0;
+  return {
+    loc: entry.loc,
+    ...entry.lastmod ? { lastmod: entry.lastmod } : {},
+    ...changefreq ? { changefreq } : {},
+    ...priority !== void 0 && Number.isFinite(priority) ? { priority } : {},
+    ...entry.extensions?.alternatives ? { alternatives: entry.extensions.alternatives.map(({ hreflang, href }) => ({ hreflang, href })) } : {},
+    ...entry.extensions?.images ? {
+      images: entry.extensions.images.map((image) => ({
+        loc: image.loc,
+        ...image.caption ? { caption: image.caption } : {},
+        ...image.geoLocation ? { geo_location: image.geoLocation } : {},
+        ...image.title ? { title: image.title } : {},
+        ...image.license ? { license: image.license } : {}
+      }))
+    } : {},
+    ...entry.extensions?.videos ? { videos: entry.extensions.videos } : {},
+    ...entry.extensions?.news ? { news: entry.extensions.news } : {}
+  };
+}
+function normalizeSourceInput(source) {
+  if (typeof source === "string") {
+    return { context: { name: "hook" }, fetch: source };
+  }
+  if (Array.isArray(source)) {
+    return { context: { name: "hook" }, fetch: source };
+  }
+  return source;
+}
+async function tryFetchWithFallback(url, options, event) {
+  const isExternalUrl = !url.startsWith("/");
+  if (isExternalUrl) {
+    const strategies = [
+      // Strategy 1: Use globalThis.$fetch (original approach)
+      () => globalThis.$fetch(url, options),
+      // Strategy 2: If event is available, try using event context even for external URLs
+      event ? () => fetchWithEvent(event, url, options) : null,
+      // Strategy 3: Use native fetch as last resort
+      () => $fetch(url, options)
+    ].filter(Boolean);
+    let lastError = null;
+    for (const strategy of strategies) {
+      try {
+        return await strategy();
+      } catch (error) {
+        lastError = error;
+        continue;
+      }
+    }
+    throw lastError;
+  }
+  return event ? await fetchWithEvent(event, url, options) : await globalThis.$fetch(url, options);
+}
+const SOURCE_FETCH_MEMO_KEY = "_sitemapSourceFetches";
+const SERVER_CACHE_MAX_AGE$2 = staticConfig.cacheMaxAgeSeconds;
+function useSourceFetchMemo(event) {
+  const context = event?.context;
+  if (!context)
+    return void 0;
+  const existing = context[SOURCE_FETCH_MEMO_KEY];
+  if (existing)
+    return existing;
+  const memo = /* @__PURE__ */ new Map();
+  context[SOURCE_FETCH_MEMO_KEY] = memo;
+  return memo;
+}
+function hashCacheKey(key) {
+  let h1 = 3735928559;
+  let h2 = 1103547991;
+  for (let i = 0; i < key.length; i++) {
+    const ch = key.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ h1 >>> 16, 2246822507) ^ Math.imul(h2 ^ h2 >>> 13, 3266489909);
+  h2 = Math.imul(h2 ^ h2 >>> 16, 2246822507) ^ Math.imul(h1 ^ h1 >>> 13, 3266489909);
+  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+}
+const fetchSourceUrlsCached = defineCachedFunction(
+  (event, _key, url, options) => fetchSourceUrls(url, options, event),
+  {
+    name: "sitemap:source-urls",
+    group: "sitemap",
+    base: "sitemap",
+    maxAge: SERVER_CACHE_MAX_AGE$2,
+    getKey: (event, key) => {
+      const host = getHeader(event, "host") || getHeader(event, "x-forwarded-host") || "";
+      const proto = getHeader(event, "x-forwarded-proto") || "https";
+      return `source-${proto}-${host}-${hashCacheKey(key)}`;
+    },
+    swr: true,
+    // A failed fetch must never be served again, otherwise one outage empties the sitemap for a
+    // whole cache window.
+    validate: (entry) => {
+      const value = entry.value;
+      return value !== void 0 && !value._isFailure;
+    }
+  }
+);
+function isSourceCacheEnabled() {
+  const cacheMaxAgeSeconds = staticConfig.cacheMaxAgeSeconds;
+  return cacheMaxAgeSeconds > 0;
+}
+async function fetchDataSource(input, event) {
+  const context = typeof input.context === "string" ? { name: input.context } : input.context || { name: "fetch" };
+  const url = typeof input.fetch === "string" ? input.fetch : input.fetch[0];
+  const options = typeof input.fetch === "string" ? {} : input.fetch[1];
+  const memo = useSourceFetchMemo(event);
+  const key = `${url}::${JSON.stringify(options || {})}`;
+  let request = memo?.get(key);
+  if (!request) {
+    request = event && isSourceCacheEnabled() ? fetchSourceUrlsCached(event, key, url, options) : fetchSourceUrls(url, options, event);
+    memo?.set(key, request);
+  }
+  const result = await request;
+  if (result._isFailure)
+    memo?.delete(key);
+  return { ...input, context, ...result };
+}
+async function fetchSourceUrls(url, options, event) {
+  const start = Date.now();
+  const isExternalUrl = !url.startsWith("/");
+  const timeout = isExternalUrl ? 1e4 : options.timeout || 5e3;
+  const timeoutController = new AbortController();
+  const abortRequestTimeout = setTimeout(() => timeoutController.abort(), timeout);
+  try {
+    let isMaybeErrorResponse = false;
+    const pathname = parseURL(url).pathname.toLowerCase();
+    const isGzUrl = pathname.endsWith(".gz");
+    const isXmlRequest = pathname.endsWith(".xml") || isGzUrl;
+    const mergedHeaders = defu(
+      options?.headers,
+      {
+        Accept: isXmlRequest ? "text/xml" : "application/json"
+      },
+      event && !isExternalUrl ? { host: getRequestHost(event, { xForwardedHost: true }) } : {}
+    );
+    const fetchOptions = {
+      ...options,
+      // Fetch XML sources as raw bytes so we can detect and decompress a gzip body
+      // (either a `.gz` URL, or a server that serves gzip without Content-Encoding)
+      // before it's mangled by a UTF-8 text decode.
+      responseType: isXmlRequest ? "arrayBuffer" : "json",
+      signal: timeoutController.signal,
+      headers: mergedHeaders,
+      // Use ofetch's built-in retry for external sources
+      ...isExternalUrl && {
+        retry: 2,
+        retryDelay: 200
+      },
+      // @ts-expect-error untyped
+      onResponse({ response }) {
+        if (typeof response._data === "string" && response._data.startsWith("<!DOCTYPE html>"))
+          isMaybeErrorResponse = true;
+      }
+    };
+    const res = await tryFetchWithFallback(url, fetchOptions, event);
+    const timeTakenMs = Date.now() - start;
+    if (isMaybeErrorResponse) {
+      return {
+        urls: [],
+        timeTakenMs,
+        error: "Received HTML response instead of JSON",
+        // An HTML page is usually an outage or an auth wall, both transient. Treat it like a
+        // failed fetch so the empty result is never cached.
+        _isFailure: true
+      };
+    }
+    let urls = [];
+    if (isXmlRequest) {
+      const bytes = res instanceof Uint8Array ? res : new Uint8Array(res);
+      const result = await collectSitemap(bytes);
+      if (result._tag !== "document")
+        throw new Error(result.issues.map((issue) => issue.message).join("; ") || "Invalid sitemap document");
+      if (result.document._tag !== "urlset")
+        throw new Error("Sitemap URL source must be a URL set, not a sitemap index");
+      urls = result.document.entries.map(readerEntryToSitemapInput);
+    } else if (typeof res === "object") {
+      urls = res.urls || res;
+    }
+    return {
+      timeTakenMs,
+      urls
+    };
+  } catch (_err) {
+    const error = _err;
+    if (isExternalUrl) {
+      const errorInfo = {
+        url,
+        timeout,
+        error: error.message,
+        statusCode: error.response?.status,
+        statusText: error.response?.statusText,
+        method: options?.method || "GET"
+      };
+      logger.error("Failed to fetch external source.", errorInfo);
+    } else {
+      logger.error("Failed to fetch source.", { url, error: error.message });
+    }
+    return {
+      urls: [],
+      error: error.message,
+      _isFailure: true
+      // Mark as failure to prevent caching
+    };
+  } finally {
+    if (abortRequestTimeout) {
+      clearTimeout(abortRequestTimeout);
+    }
+  }
+}
+async function globalSitemapSources() {
+  const m = await import('../virtual/global-sources.mjs');
+  return [...m.sources];
+}
+async function childSitemapSources(definition) {
+  if (definition?.sources?.length)
+    return [...definition.sources];
+  if (definition?.urls) {
+    const urls = typeof definition.urls === "function" ? await definition.urls() : definition.urls;
+    return [{
+      context: { name: `sitemaps:${definition.sitemapName}:urls`, description: "Set with the sitemap definition `urls`." },
+      urls
+    }];
+  }
+  if (!definition?._hasSourceChunk)
+    return [];
+  const m = await import('../virtual/child-sources.mjs');
+  return [...m.sources[definition.sitemapName] || []];
+}
+async function resolveSitemapSources(sources, event) {
+  return await Promise.all(
+    sources.map((source) => {
+      const normalized = normalizeSourceInput(source);
+      if ("urls" in normalized) {
+        return {
+          timeTakenMs: 0,
+          ...normalized,
+          urls: normalized.urls
+        };
+      }
+      if (normalized.fetch)
+        return fetchDataSource(normalized, event);
+      return {
+        ...normalized,
+        error: "Invalid source"
+      };
+    })
+  );
+}
+
+function resolveSitemapEntries(sitemap, urls, runtimeConfig, resolvers, baseURL) {
+  const {
+    autoI18n,
+    isI18nMapped
+  } = runtimeConfig;
+  const hasFilters = !!sitemap.include?.length || !!sitemap.exclude?.length;
+  const filterPath = hasFilters ? createPathFilter({
+    include: sitemap.include,
+    exclude: sitemap.exclude
+  }, baseURL || "/") : void 0;
+  const _urls = [];
+  for (const _e of urls) {
+    const e = preNormalizeEntry(_e, resolvers);
+    if (e.loc && (!filterPath || filterPath(e.loc, e._path?.pathname)))
+      _urls.push(e);
+  }
+  const withoutPrefixPaths = {};
+  if (autoI18n && autoI18n.strategy !== "no_prefix") {
+    const localeCodes = new Set(autoI18n.locales.map((l) => l.code));
+    const localeByCode = new Map(autoI18n.locales.map((l) => [l.code, l]));
+    const defaultLocale = autoI18n.defaultLocale;
+    const hasDifferentDomains = !!autoI18n.differentDomains;
+    const validI18nUrlsForTransform = [];
+    for (let i = 0; i < _urls.length; i++) {
+      const _e = _urls[i];
+      if (_e._abs)
+        continue;
+      const split = splitForLocales(_e._relativeLoc, localeCodes);
+      let localeCode = split[0];
+      const pathWithoutPrefix = split[1];
+      if (!localeCode)
+        localeCode = defaultLocale;
+      const e = _e;
+      e._pathWithoutPrefix = pathWithoutPrefix;
+      const locale = localeByCode.get(localeCode);
+      if (!locale)
+        continue;
+      e._locale = locale;
+      e._index = i;
+      e._key = `${e._sitemap || ""}${e._path?.pathname || "/"}${e._path?.search || ""}`;
+      withoutPrefixPaths[pathWithoutPrefix] = withoutPrefixPaths[pathWithoutPrefix] || [];
+      if (!withoutPrefixPaths[pathWithoutPrefix].some((e2) => e2._locale.code === locale.code))
+        withoutPrefixPaths[pathWithoutPrefix].push(e);
+      validI18nUrlsForTransform.push(e);
+    }
+    for (const e of validI18nUrlsForTransform) {
+      if (!e._i18nTransform && !e.alternatives?.length) {
+        const alternatives = [];
+        for (const u of withoutPrefixPaths[e._pathWithoutPrefix] || []) {
+          if (u._locale.code === defaultLocale) {
+            alternatives.push({
+              href: u.loc,
+              hreflang: "x-default"
+            });
+          }
+          alternatives.push({
+            href: u.loc,
+            hreflang: u._locale._hreflang || defaultLocale
+          });
+        }
+        if (alternatives.length)
+          e.alternatives = alternatives;
+      } else if (e._i18nTransform) {
+        delete e._i18nTransform;
+        const routeEntries = resolveI18nRouteEntries(e._relativeLoc, autoI18n, (href) => !filterPath || filterPath(href));
+        if (hasDifferentDomains) {
+          e.alternatives = routeEntries[0]?.alternatives;
+        } else {
+          for (const { alternatives, locale: l, loc } of routeEntries) {
+            const _sitemap = isI18nMapped ? l._sitemap : void 0;
+            const { _index: _, ...rest } = e;
+            const newEntry = preNormalizeEntry({
+              _sitemap,
+              ...rest,
+              _key: `${_sitemap || ""}${loc || "/"}`,
+              _locale: l,
+              loc,
+              alternatives
+            }, resolvers);
+            if (e._locale.code === newEntry._locale.code) {
+              _urls[e._index] = newEntry;
+              e._index = void 0;
+            } else {
+              _urls.push(newEntry);
+            }
+          }
+        }
+      }
+      if (isI18nMapped) {
+        e._sitemap = e._sitemap || e._locale._sitemap;
+        e._key = `${e._sitemap || ""}${e.loc || "/"}${e._path?.search || ""}`;
+      }
+      if (e._index)
+        _urls[e._index] = e;
+    }
+  }
+  return _urls;
+}
+
+const SERVER_CACHE_MAX_AGE$1 = staticConfig.cacheMaxAgeSeconds;
+async function buildResolvedSitemapUrls(effectiveSitemap, matchName, isChunked, resolvers, runtimeConfig, nitro) {
+  const { sitemaps, autoI18n, isI18nMapped, isMultiSitemap, sortEntries } = runtimeConfig;
+  let sourcesInput = effectiveSitemap.includeAppSources ? [...await globalSitemapSources(), ...await childSitemapSources(effectiveSitemap)] : await childSitemapSources(effectiveSitemap);
+  if (nitro && resolvers.event) {
+    const ctx = {
+      event: resolvers.event,
+      sitemapName: matchName,
+      sources: sourcesInput
+    };
+    await nitro.hooks.callHook("sitemap:sources", ctx);
+    sourcesInput = ctx.sources;
+  }
+  const sources = await resolveSitemapSources(sourcesInput, resolvers.event);
+  const failedSources = sources.filter((source) => source.error && source._isFailure).map((source) => ({
+    url: typeof source.fetch === "string" ? source.fetch : source.fetch?.[0] || "unknown",
+    error: source.error || "Unknown error"
+  }));
+  const resolvedCtx = {
+    urls: sources.flatMap((s) => s.urls),
+    sitemapName: matchName,
+    event: resolvers.event
+  };
+  await nitro?.hooks.callHook("sitemap:input", resolvedCtx);
+  const enhancedUrls = resolveSitemapEntries(effectiveSitemap, resolvedCtx.urls, { autoI18n, isI18nMapped }, resolvers, useRuntimeConfig().app.baseURL);
+  const localeSitemapKeys = isI18nMapped && autoI18n ? autoI18n.locales.map((l) => l._sitemap) : [];
+  if (isMultiSitemap) {
+    const sitemapNames = Object.keys(sitemaps).filter((k) => k !== "index");
+    const validSitemapNames = new Set(sitemapNames);
+    if (isI18nMapped) {
+      for (const name of sitemapNames) {
+        const localeKey = resolveI18nSitemapLocaleKey(name, localeSitemapKeys);
+        if (localeKey)
+          validSitemapNames.add(localeKey);
+      }
+    }
+    const warnedSitemaps = nitro?._sitemapWarnedSitemaps || /* @__PURE__ */ new Set();
+    for (const e of enhancedUrls) {
+      const hasMatchingSitemap = typeof e._sitemap === "string" && validSitemapNames.has(e._sitemap);
+      if (typeof e._sitemap === "string" && !hasMatchingSitemap) {
+        if (!warnedSitemaps.has(e._sitemap)) {
+          warnedSitemaps.add(e._sitemap);
+          logger.error(`Sitemap \`${e._sitemap}\` not found in sitemap config. Available sitemaps: ${sitemapNames.join(", ")}. Either add it to the sitemap config or register it with the sitemap:sitemaps-resolved hook. Entry \`${e.loc}\` will be omitted.`);
+        }
+      }
+    }
+    if (nitro) {
+      nitro._sitemapWarnedSitemaps = warnedSitemaps;
+    }
+  }
+  const matchedLocaleSitemap = isI18nMapped ? resolveI18nSitemapLocaleKey(matchName, localeSitemapKeys) : null;
+  const filteredUrls = enhancedUrls.filter((e) => {
+    if (e._sitemap === false)
+      return false;
+    if (isMultiSitemap && e._sitemap && matchName) {
+      if (isChunked)
+        return e._sitemap === matchName;
+      if (e._sitemap === matchName)
+        return true;
+      if (isI18nMapped)
+        return e._sitemap === matchedLocaleSitemap;
+      return false;
+    }
+    return true;
+  });
+  const urls = sortEntries ? sortInPlace(filteredUrls) : filteredUrls;
+  return { urls, failedSources };
+}
+const buildResolvedSitemapUrlsCached = defineCachedFunction(
+  async (_event, effectiveSitemap, matchName, isChunked, resolvers, runtimeConfig, nitro) => buildResolvedSitemapUrls(effectiveSitemap, matchName, isChunked, resolvers, runtimeConfig, nitro),
+  {
+    name: "sitemap:resolved-urls",
+    group: "sitemap",
+    base: "sitemap",
+    maxAge: SERVER_CACHE_MAX_AGE$1,
+    getKey: (event, _effectiveSitemap, matchName, isChunked) => {
+      const host = getHeader(event, "host") || getHeader(event, "x-forwarded-host") || "";
+      const proto = getHeader(event, "x-forwarded-proto") || "https";
+      return `resolved-${isChunked ? "chunked-" : ""}${matchName}-${proto}-${host}`;
+    },
+    swr: true,
+    // A build with failed sources is never cached: one outage must not pin an empty sitemap
+    // for a whole cache window. The next request retries the sources instead.
+    validate: (entry) => {
+      const value = entry.value;
+      return value !== void 0 && !value.failedSources?.length;
+    }
+  }
+);
+async function getResolvedSitemapUrls(effectiveSitemap, matchName, isChunked, resolvers, runtimeConfig, nitro) {
+  const event = resolvers.event;
+  const shouldCache = typeof runtimeConfig.cacheMaxAgeSeconds === "number" && runtimeConfig.cacheMaxAgeSeconds > 0;
+  if (shouldCache && event) {
+    return buildResolvedSitemapUrlsCached(event, effectiveSitemap, matchName, isChunked, resolvers, runtimeConfig, nitro);
+  }
+  return buildResolvedSitemapUrls(effectiveSitemap, matchName, isChunked, resolvers, runtimeConfig, nitro);
+}
+async function buildSitemapUrls(sitemap, resolvers, runtimeConfig, nitro) {
+  const { sitemaps, autoI18n, defaultSitemapsChunkSize } = runtimeConfig;
+  const chunkSize = defaultSitemapsChunkSize || void 0;
+  const chunkInfo = parseChunkInfo(sitemap.sitemapName, sitemaps, chunkSize);
+  if (autoI18n?.differentDomains) {
+    const domain = autoI18n.locales.find((e) => e.language === sitemap.sitemapName || e.code === sitemap.sitemapName)?.domain;
+    if (domain) {
+      const _tester = resolvers.canonicalUrlResolver;
+      resolvers.canonicalUrlResolver = (path) => resolveSitePath(path, {
+        absolute: true,
+        withBase: false,
+        siteUrl: withHttps(domain),
+        trailingSlash: _tester("/test/").endsWith("/"),
+        base: "/"
+      });
+    }
+  }
+  let effectiveSitemap = sitemap;
+  const baseSitemapName = chunkInfo.baseSitemapName;
+  if (chunkInfo.isChunked && baseSitemapName !== sitemap.sitemapName && sitemaps[baseSitemapName]) {
+    effectiveSitemap = sitemaps[baseSitemapName];
+  }
+  const matchName = chunkInfo.isChunked ? baseSitemapName : sitemap.sitemapName;
+  const resolved = await getResolvedSitemapUrls(effectiveSitemap, matchName, chunkInfo.isChunked, resolvers, runtimeConfig, nitro);
+  const urls = sliceUrlsForChunk(resolved.urls, sitemap.sitemapName, sitemaps, chunkSize);
+  return { urls, failedSources: resolved.failedSources };
+}
+
+const SERVER_CACHE_MAX_AGE = staticConfig.cacheMaxAgeSeconds;
+function useNitroUrlResolvers(e) {
+  const canonicalQuery = getQuery(e).canonical;
+  const isShowingCanonical = typeof canonicalQuery !== "undefined" && canonicalQuery !== "false";
+  const siteConfig = getSiteConfig(e);
+  return {
+    event: e,
+    fixSlashes: (path) => fixSlashes(siteConfig.trailingSlash, path),
+    // we need these as they depend on the nitro event
+    canonicalUrlResolver: createSitePathResolver(e, {
+      canonical: isShowingCanonical || true,
+      absolute: true,
+      withBase: true
+    }),
+    relativeBaseUrlResolver: createSitePathResolver(e, { absolute: false, withBase: true })
+  };
+}
+async function buildSitemapRenderPlan(event, definition, resolvers, runtimeConfig) {
+  const { sitemapName } = definition;
+  const nitro = useNitroApp();
+  const { urls: resolvedSitemapUrls, failedSources } = await buildSitemapUrls(definition, resolvers, runtimeConfig, nitro);
+  const sitemapUrls = resolvedSitemapUrls.slice();
+  const routeRuleMatcher = createNitroRouteRuleMatcher$1(useRuntimeConfig(event));
+  const { autoI18n } = runtimeConfig;
+  const localeCodes = autoI18n?.locales && autoI18n.strategy !== "no_prefix" ? new Set(autoI18n.locales.map((l) => l.code)) : void 0;
+  sitemapUrls.length;
+  let validCount = 0;
+  for (let i = 0; i < sitemapUrls.length; i++) {
+    const u = sitemapUrls[i];
+    const path = u._path?.pathname || u.loc;
+    if (!getPathRobotConfig(event, { path, skipSiteIndexable: true }).indexable)
+      continue;
+    let routeRules = routeRuleMatcher(path);
+    if (localeCodes) {
+      const match = splitForLocales(path, localeCodes);
+      const pathWithoutPrefix = match[1];
+      if (pathWithoutPrefix && pathWithoutPrefix !== path)
+        routeRules = defu(routeRules, routeRuleMatcher(pathWithoutPrefix));
+    }
+    if (routeRules.sitemap === false)
+      continue;
+    if (typeof routeRules.robots !== "undefined" && !routeRules.robots)
+      continue;
+    let hasRobotsDisabled = false;
+    const headers = routeRules.headers;
+    if (headers) {
+      for (const name in headers) {
+        if (name.toLowerCase() === "x-robots-tag" && headers[name].toLowerCase().includes("noindex")) {
+          hasRobotsDisabled = true;
+          break;
+        }
+      }
+    }
+    if (routeRules.redirect || hasRobotsDisabled)
+      continue;
+    sitemapUrls[validCount++] = routeRules.sitemap ? defu(u, routeRules.sitemap) : u;
+  }
+  sitemapUrls.length = validCount;
+  const locSize = sitemapUrls.length;
+  const resolvedCtx = {
+    urls: sitemapUrls,
+    sitemapName,
+    event
+  };
+  await nitro.hooks.callHook("sitemap:resolved", resolvedCtx);
+  if (resolvedCtx.urls.length !== locSize) {
+    for (let i = 0; i < resolvedCtx.urls.length; i++)
+      resolvedCtx.urls[i] = preNormalizeEntry(resolvedCtx.urls[i], resolvers);
+  }
+  const maybeSort = (urls2) => runtimeConfig.sortEntries ? sortInPlace(urls2) : urls2;
+  const defaults = definition.defaults;
+  const normalizedPreDedupe = resolvedCtx.urls;
+  const firstLastmod = normalizedPreDedupe[0]?.lastmod ?? defaults?.lastmod;
+  let cacheLastmod = normalizedPreDedupe.length > 1 && !!firstLastmod;
+  for (let i = 1; cacheLastmod && i < Math.min(normalizedPreDedupe.length, 8); i++)
+    cacheLastmod = (normalizedPreDedupe[i].lastmod ?? defaults?.lastmod) === firstLastmod;
+  const normaliseCache = cacheLastmod ? {} : void 0;
+  for (let i = 0; i < normalizedPreDedupe.length; i++)
+    normalizedPreDedupe[i] = normaliseEntry(normalizedPreDedupe[i], defaults, resolvers, normaliseCache);
+  const duplicateKeys = /* @__PURE__ */ new Set();
+  const urls = mergeOnKey(normalizedPreDedupe, "_key", (key) => duplicateKeys.add(key));
+  if (duplicateKeys.size) {
+    for (let i = 0; i < urls.length; i++) {
+      if (duplicateKeys.has(urls[i]._key))
+        urls[i] = normaliseEntry(urls[i], defaults, resolvers, normaliseCache);
+    }
+  }
+  maybeSort(urls);
+  if (definition._isChunking && definition.sitemapName.includes("-")) {
+    const parts = definition.sitemapName.split("-");
+    const lastPart = parts.pop();
+    if (!Number.isNaN(Number(lastPart))) {
+      const chunkIndex = Number(lastPart);
+      const baseSitemapName = parts.join("-");
+      if (urls.length === 0 && chunkIndex > 0) {
+        throw createError$1({
+          statusCode: 404,
+          message: `Sitemap chunk ${chunkIndex} for "${baseSitemapName}" does not exist.`
+        });
+      }
+    }
+  }
+  const errorInfo = failedSources.length > 0 ? {
+    messages: failedSources.map((f) => f.error),
+    urls: failedSources.map((f) => f.url)
+  } : void 0;
+  return { errorInfo, sitemapName, urls };
+}
+async function renderSitemapOutput(nitro, event, sitemapName, renderString, renderStream, shouldStream, debug) {
+  let buffered = false;
+  let sitemap;
+  const ctx = { sitemapName, event };
+  Object.defineProperty(ctx, "sitemap", {
+    configurable: true,
+    enumerable: true,
+    get() {
+      buffered = true;
+      sitemap ??= renderString();
+      return sitemap;
+    },
+    set(value) {
+      buffered = true;
+      sitemap = value;
+    }
+  });
+  await nitro.hooks.callHook("sitemap:output", ctx);
+  if (debug)
+    setHeader(event, "X-Sitemap-Render-Mode", buffered ? "buffered-hook" : "stream");
+  return buffered ? createChunkedXmlStream([sitemap]) : renderStream();
+}
+async function buildSitemapXml(event, definition, resolvers, runtimeConfig) {
+  const { errorInfo, sitemapName, urls } = await buildSitemapRenderPlan(event, definition, resolvers, runtimeConfig);
+  const sitemap = urlsToXml(urls, resolvers, runtimeConfig, errorInfo);
+  const ctx = { sitemap, sitemapName, event };
+  await useNitroApp().hooks.callHook("sitemap:output", ctx);
+  return ctx.sitemap;
+}
+function getSitemapCacheKey(event, definition) {
+  const host = getHeader(event, "host") || getHeader(event, "x-forwarded-host") || "";
+  const proto = getHeader(event, "x-forwarded-proto") || "https";
+  const sitemapName = definition.sitemapName || "default";
+  return `${sitemapName}-${proto}-${host}`;
+}
+const buildSitemapRenderPlanCached = defineCachedFunction(
+  buildSitemapRenderPlan,
+  {
+    name: "sitemap:render-plan",
+    group: "sitemap",
+    maxAge: SERVER_CACHE_MAX_AGE,
+    base: "sitemap",
+    getKey: getSitemapCacheKey,
+    swr: true
+  }
+);
+const buildSitemapXmlCached = defineCachedFunction(
+  buildSitemapXml,
+  {
+    name: "sitemap:xml",
+    group: "sitemap",
+    maxAge: SERVER_CACHE_MAX_AGE,
+    base: "sitemap",
+    // Use the sitemap storage
+    getKey: getSitemapCacheKey,
+    swr: true
+    // Enable stale-while-revalidate
+  }
+);
+function setSitemapResponseHeaders(event, runtimeConfig) {
+  setHeader(event, "Content-Type", "text/xml; charset=UTF-8");
+  if (runtimeConfig.cacheMaxAgeSeconds) {
+    setHeader(event, "Cache-Control", `public, max-age=${runtimeConfig.cacheMaxAgeSeconds}, s-maxage=${runtimeConfig.cacheMaxAgeSeconds}, stale-while-revalidate=3600`);
+    const now = /* @__PURE__ */ new Date();
+    setHeader(event, "X-Sitemap-Generated", now.toISOString());
+    setHeader(event, "X-Sitemap-Cache-Duration", `${runtimeConfig.cacheMaxAgeSeconds}s`);
+    const expiryTime = new Date(now.getTime() + runtimeConfig.cacheMaxAgeSeconds * 1e3);
+    setHeader(event, "X-Sitemap-Cache-Expires", expiryTime.toISOString());
+    const remainingSeconds = Math.floor((expiryTime.getTime() - now.getTime()) / 1e3);
+    setHeader(event, "X-Sitemap-Cache-Remaining", `${remainingSeconds}s`);
+  } else {
+    setHeader(event, "Cache-Control", `no-cache, no-store`);
+  }
+  event.context._isSitemap = true;
+}
+async function createSitemap(event, definition, runtimeConfig) {
+  const resolvers = useNitroUrlResolvers(event);
+  const shouldStream = !!runtimeConfig.experimentalStreaming && true;
+  const shouldCache = typeof runtimeConfig.cacheMaxAgeSeconds === "number" && runtimeConfig.cacheMaxAgeSeconds > 0;
+  let xml;
+  if (shouldStream) {
+    const { errorInfo, sitemapName, urls } = shouldCache ? await buildSitemapRenderPlanCached(event, definition, resolvers, runtimeConfig) : await buildSitemapRenderPlan(event, definition, resolvers, runtimeConfig);
+    xml = await renderSitemapOutput(
+      useNitroApp(),
+      event,
+      sitemapName,
+      () => urlsToXml(urls, resolvers, runtimeConfig, errorInfo),
+      () => urlsToXmlStream(urls, resolvers, runtimeConfig, errorInfo),
+      true,
+      runtimeConfig.debug
+    );
+  } else {
+    xml = shouldCache ? await buildSitemapXmlCached(event, definition, resolvers, runtimeConfig) : await buildSitemapXml(event, definition, resolvers, runtimeConfig);
+  }
+  setSitemapResponseHeaders(event, runtimeConfig);
+  return xml;
+}
+
+async function sitemapXmlEventHandler(e) {
+  const runtimeConfig = await useResolvedSitemapRuntimeConfig(e);
+  const { sitemaps } = runtimeConfig;
+  if ("index" in sitemaps)
+    return sendRedirect(e, withBase("/sitemap_index.xml", useRuntimeConfig().app.baseURL), 301);
+  return createSitemap(e, Object.values(sitemaps)[0], runtimeConfig);
+}
+
+const _e1WZH6 = defineEventHandler(sitemapXmlEventHandler);
+
 const _SxA8c9 = defineEventHandler(() => {});
 
 const _lazy_uuB8yE = () => import('../routes/renderer.mjs').then(function (n) { return n.r; });
+const _lazy_rirWvJ = () => import('../routes/_og/d/image.mjs');
+const _lazy_Plbyua = () => import('../routes/_og/r/resolve.mjs');
 
 const handlers = [
   { route: '', handler: _2iWpcg, lazy: false, middleware: true, method: undefined },
   { route: '/__nuxt_error', handler: _lazy_uuB8yE, lazy: true, middleware: false, method: undefined },
+  { route: '', handler: _PMm7hI, lazy: false, middleware: true, method: undefined },
+  { route: '/robots.txt', handler: _MV93At, lazy: false, middleware: false, method: undefined },
+  { route: '', handler: _BM153P, lazy: false, middleware: true, method: undefined },
+  { route: '/__sitemap__/style.xsl', handler: _pSVT3Q, lazy: false, middleware: false, method: undefined },
+  { route: '/sitemap.xml', handler: _e1WZH6, lazy: false, middleware: false, method: undefined },
+  { route: '/_og/d/**', handler: _lazy_rirWvJ, lazy: true, middleware: false, method: undefined },
+  { route: '/_og/s/**', handler: _lazy_rirWvJ, lazy: true, middleware: false, method: undefined },
+  { route: '/_og/r/**', handler: _lazy_Plbyua, lazy: true, middleware: false, method: undefined },
   { route: '/__nuxt_island/**', handler: _SxA8c9, lazy: false, middleware: false, method: undefined },
   { route: '/**', handler: _lazy_uuB8yE, lazy: true, middleware: false, method: undefined }
 ];
@@ -4733,8 +9682,8 @@ function createNitroApp() {
       if (!event.context.waitUntil && fetchContext?.waitUntil) {
         event.context.waitUntil = fetchContext.waitUntil;
       }
-      event.fetch = (req, init) => fetchWithEvent(event, req, init, { fetch: localFetch });
-      event.$fetch = (req, init) => fetchWithEvent(event, req, init, {
+      event.fetch = (req, init) => fetchWithEvent$1(event, req, init, { fetch: localFetch });
+      event.$fetch = (req, init) => fetchWithEvent$1(event, req, init, {
         fetch: $fetch
       });
       event.waitUntil = (promise) => {
@@ -4768,7 +9717,7 @@ function createNitroApp() {
     preemptive: true
   });
   const nodeHandler = toNodeListener(h3App);
-  const localCall = (aRequest) => b(
+  const localCall = (aRequest) => b$1(
     nodeHandler,
     aRequest
   );
@@ -4836,6 +9785,10 @@ function useNitroApp() {
   return nitroApp;
 }
 runNitroPlugins(nitroApp);
+
+function defineNitroPlugin(def) {
+  return def;
+}
 
 function defineRenderHandler(render) {
   const runtimeConfig = useRuntimeConfig();
@@ -5122,5 +10075,5 @@ function setupGracefulShutdown(listener, nitroApp) {
   });
 }
 
-export { $fetch as $, trapUnhandledNodeErrors as a, useNitroApp as b, defineRenderHandler as c, destr as d, encodePath as e, createError$1 as f, getQuery as g, getRouteRules as h, joinURL as i, joinRelativeURL as j, getResponseStatusText as k, getResponseStatus as l, hasProtocol as m, parseURL as n, decodePath as o, parseQuery as p, isScriptProtocol as q, relative as r, setupGracefulShutdown as s, toNodeListener as t, useRuntimeConfig as u, withTrailingSlash as v, withQuery as w, withoutTrailingSlash as x, sanitizeStatusCode as y, defu as z };
+export { $fetch as $, setHeader as A, logger$2 as B, resolveContext as C, useOgImageRuntimeConfig as D, getRequestHost as E, getSiteConfig as F, defineEventHandler as G, H3Error as H, parseURL as I, isInternalRoute as J, withQuery as K, withLeadingSlash as L, fetchWithEvent as M, sendRedirect as N, getRequestURL as O, getCloudflareEnv as P, getNitroOrigin as Q, join as R, withBase as S, fontArrayCache as T, fontCache as U, toBase64Image as V, withTimeout as W, defu as X, emojiCache as Y, hasProtocol as Z, parseQuery as _, trapUnhandledNodeErrors as a, decodePath as a0, isScriptProtocol as a1, withoutTrailingSlash as a2, sanitizeStatusCode as a3, titleCase as a4, createNitroRouteRuleMatcher$1 as a5, stringifyQuery as a6, digest as a7, useNitroApp as b, defineRenderHandler as c, destr as d, encodePath as e, createError$1 as f, getQuery as g, getRouteRules as h, joinURL as i, joinRelativeURL as j, getResponseStatusText as k, getResponseStatus as l, htmlPayloadCache as m, logger$1 as n, extractSocialPreviewTags as o, fetchIsland as p, prefixStorage as q, relative as r, setupGracefulShutdown as s, toNodeListener as t, useRuntimeConfig as u, useStorage as v, withTrailingSlash as w, getEventQuery as x, handleCacheHeaders as y, setHeaders as z };
 //# sourceMappingURL=nitro.mjs.map

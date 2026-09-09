@@ -4,11 +4,13 @@ import { companyInfo } from '@/data/company'
 import { useSanity } from '@/composables/useSanity'
 import { useAsyncData } from '#imports'
 
-useHead({
+useSeoMeta({
   title: 'Catalog Products - PT Tevori Global Indonesia',
-  meta: [
-    { name: 'description', content: 'Explore our verified export catalog: Indonesian Teak Furniture, Authentic Balinese Handcrafted Arts, and Decorative Items.' }
-  ]
+  ogTitle: 'Catalog Products - PT Tevori Global Indonesia',
+  description: 'Explore our verified export catalog: Indonesian Teak Furniture, Authentic Balinese Handcrafted Arts, and Decorative Items.',
+  ogDescription: 'Explore our verified export catalog: Indonesian Teak Furniture, Authentic Balinese Handcrafted Arts, and Decorative Items.',
+  ogImage: 'https://images.unsplash.com/photo-1544457070-4cd773b4d71e?auto=format&fit=crop&w=1200&q=80',
+  twitterCard: 'summary_large_image',
 })
 
 const { fetch } = useSanity()
@@ -135,7 +137,7 @@ const createQuoteLink = (product) => {
         class="bg-white rounded-2xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col group"
       >
         <!-- Product Image -->
-        <div class="relative h-64 bg-slate-100 overflow-hidden">
+        <NuxtLink :to="`/products/${product.slug}`" class="relative h-64 bg-slate-100 overflow-hidden block">
           <img
             v-if="product.primaryImage"
             :src="product.primaryImage"
@@ -154,14 +156,14 @@ const createQuoteLink = (product) => {
           <div v-if="product.is_featured" class="absolute top-3 right-3 bg-amber-500 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase">
             Featured
           </div>
-        </div>
+        </NuxtLink>
 
         <!-- Product Details -->
         <div class="p-6 flex flex-col grow justify-between">
           <div>
-            <h3 class="text-lg font-bold text-slate-800 group-hover:text-[#737474] transition mb-2 line-clamp-2 leading-snug">
+            <NuxtLink :to="`/products/${product.slug}`" class="text-lg font-bold text-slate-800 group-hover:text-[#737474] transition mb-2 line-clamp-2 leading-snug block">
               {{ product.title }}
-            </h3>
+            </NuxtLink>
             <p class="text-xs text-slate-500 font-medium mb-4 flex items-center gap-1.5 opacity-80">
               <span>🪵</span> {{ String(product.material || 'Indonesian Craftsmanship').substring(0, 32) }}{{ String(product.material || '').length > 32 ? '...' : '' }}
             </p>

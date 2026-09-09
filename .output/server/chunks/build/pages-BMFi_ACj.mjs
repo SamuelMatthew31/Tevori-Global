@@ -1,4 +1,4 @@
-import { c as companyInfo, N as NuxtLink } from '../virtual/entry.mjs';
+import { d as companyInfo, N as NuxtLink } from '../virtual/entry.mjs';
 import { i as insightsList, _ as _sfc_main$a } from './InsightCard-BUMpZv4l.mjs';
 import { watch, nextTick, mergeProps, unref, withCtx, createTextVNode, useSSRContext } from 'vue';
 import { useRoute } from 'vue-router';
@@ -6,6 +6,9 @@ import { ssrRenderAttrs, ssrRenderComponent, ssrInterpolate, ssrRenderList, ssrR
 import 'nostics';
 import 'nostics/formatters/ansi';
 import '../_/nitro.mjs';
+import 'lru-cache';
+import 'fnv1a-64';
+import 'object-identity';
 import 'node:http';
 import 'node:https';
 import 'node:events';
@@ -13,13 +16,17 @@ import 'node:buffer';
 import 'node:fs';
 import 'node:path';
 import 'node:crypto';
+import 'consola';
 import 'node:url';
+import 'sitemapd/parse';
 import '../routes/renderer.mjs';
+import '../_/server.mjs';
 import 'unhead/server';
 import 'unhead/legacy';
 import 'unhead/plugins';
 import 'vue-bundle-renderer/runtime';
 import 'devalue';
+import '@vue/shared';
 import 'unhead/utils';
 
 //#region src/sections/home/HeroSection.vue
