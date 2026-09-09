@@ -35,8 +35,29 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
+    // Note: Do NOT use `/api` paths here unless you fully SSR your Vercel deployment. 
+    // Nuxt SEO can directly consume an async function instead to prevent build-time prerender crashes!
     sources: [
-      '/api/sitemap-urls'
+      async () => {
+        // Safe dynamic import so it doesn't break Nuxt config bundling
+        const { createClient } = await import('@sanity/client')
+        
+        // Use process.env directly since useRuntimeConfig is not available here
+        const client = createClient({
+          projectId: process.env.SANITY_PROJECT_ID || 'lskrikfb',
+          dataset: process.env.SANITY_DATASET || 'production',
+          useCdn: true,
+          apiVersion: '2024-03-01',
+        })
+
+        try {
+          const products = await client.fetch(`*[_type == "product" && defined(slug.current)] { "slug": slug.current }`)
+          return products.map(p => `/products/${p.slug}`)
+        } catch (error) {
+          console.error('Failed to fetch routes for sitemap', error)
+          return []
+        }
+      }
     ]
   },
 
