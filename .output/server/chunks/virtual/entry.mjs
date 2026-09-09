@@ -746,8 +746,6 @@ function useRuntimeConfig(_event) {
 function defineGetter(obj, key, val) {
 	Object.defineProperty(obj, key, { get: () => val });
 }
-//#endregion
-//#region node_modules/nuxt/dist/app/utils.js
 globalThis._importMeta_.url.replace(/\/app\/.*$/, "/");
 //#endregion
 //#region node_modules/nuxt/dist/app/components/injections.js
@@ -1648,15 +1646,15 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default =
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Froute-rules.mjs
 var sensitiveMatcher = /* @__PURE__ */ (() => {
-	const $0 = {};
+	const $0 = { prerender: true }, $1 = {};
 	return (m, p) => {
 		let r = [];
 		if (p.charCodeAt(p.length - 1) === 47) p = p.slice(0, -1);
 		if (p === "/sitemap.xml") r.push({ data: $0 });
-		else if (p === "/_nuxt") r.push({ data: $0 });
+		else if (p === "/_nuxt") r.push({ data: $1 });
 		else if (p.charCodeAt(p.length - 1) === 47) {
 			if (p === "/sitemap.xml/") r.push({ data: $0 });
-			else if (p === "/_nuxt/") r.push({ data: $0 });
+			else if (p === "/_nuxt/") r.push({ data: $1 });
 		}
 		let s = p.split("/");
 		if (s.length > 1 && s[s.length - 1] === "") {
@@ -1665,18 +1663,22 @@ var sensitiveMatcher = /* @__PURE__ */ (() => {
 		}
 		let l = s.length;
 		if (l > 1) {
-			if (s[1] === "_og") {
+			if (s[1] === "api") r.push({
+				data: $1,
+				params: { "_": p.slice(5) }
+			});
+			else if (s[1] === "_og") {
 				if (l > 2) {
 					if (s[2] === "d") r.push({
-						data: $0,
+						data: $1,
 						params: { "_": p.slice(7) }
 					});
 					else if (s[2] === "r") r.push({
-						data: $0,
+						data: $1,
 						params: { "_": p.slice(7) }
 					});
 					else if (s[2] === "s") r.push({
-						data: $0,
+						data: $1,
 						params: { "_": p.slice(7) }
 					});
 				}
@@ -1704,11 +1706,11 @@ var normalizePath = (path, fold) => {
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froute_rules_default = (path) => virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Frouter_options_default.sensitive ? defu({}, ...sensitiveMatcher("", normalizePath(path, false)).map((r) => r.data).reverse()) : defu({}, ...foldedMatcher("", normalizePath(path, true)).map((r) => r.data).reverse());
 //#endregion
 //#region node_modules/nuxt/dist/app/composables/manifest.js
-var routeRulesMatcher = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froute_rules_default;
+var routeRulesMatcher$1 = virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froute_rules_default;
 function getRouteRules(arg) {
 	const path = typeof arg === "string" ? arg : arg.path;
 	try {
-		return routeRulesMatcher(path);
+		return routeRulesMatcher$1(path);
 	} catch (e) {
 		manifestDiagnostics.NUXT_E5003({
 			path,
@@ -2029,7 +2031,7 @@ function freezeHead(head) {
 }
 //#endregion
 //#region node_modules/nuxt/dist/head/runtime/plugins/unhead.server.js
-var plugin$2 = /* @__PURE__ */ defineNuxtPlugin({
+var plugin$3 = /* @__PURE__ */ defineNuxtPlugin({
 	name: "nuxt:head",
 	enforce: "pre",
 	setup(nuxtApp) {
@@ -2106,7 +2108,7 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Froutes_default = [
 ];
 //#endregion
 //#region node_modules/nuxt/dist/pages/runtime/plugins/router.js
-var plugin$1 = /* @__PURE__ */ defineNuxtPlugin({
+var plugin$2 = /* @__PURE__ */ defineNuxtPlugin({
 	name: "nuxt:router",
 	enforce: "pre",
 	async setup(nuxtApp) {
@@ -2287,7 +2289,7 @@ var reducers = [
 	["Ref", (data) => isRef(data) && data.value],
 	["Reactive", (data) => isReactive(data) && toRaw(data)]
 ];
-var plugin = /* @__PURE__ */ defineNuxtPlugin({
+var plugin$1 = /* @__PURE__ */ defineNuxtPlugin({
 	name: "nuxt:revive-payload:server",
 	setup() {
 		for (const [reducer, fn] of reducers) definePayloadReducer(reducer, fn);
@@ -4330,6 +4332,9 @@ var robot_meta_server_default = /* @__PURE__ */ defineNuxtPlugin({ setup() {
 //#endregion
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fcomponents.plugin.mjs
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fcomponents_plugin_default = /* @__PURE__ */ defineNuxtPlugin({ name: "nuxt:global-components" });
+var plugin = /* @__PURE__ */ defineNuxtPlugin(async () => {
+	return;
+});
 //#endregion
 //#region node_modules/nuxt-seo-utils/dist/runtime/app/plugins/1.absoluteImageUrls.server.js
 var _1_absoluteImageUrls_server_default = /* @__PURE__ */ defineNuxtPlugin({
@@ -4452,9 +4457,9 @@ function applyDefaults() {
 //#region virtual:nuxt:node_modules%2F.cache%2Fnuxt%2F.nuxt%2Fplugins.server.mjs
 var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fplugins_server_default = [
 	_0_siteConfig_default,
+	plugin$3,
 	plugin$2,
 	plugin$1,
-	plugin,
 	siteConfig_default,
 	inferSeoMetaPlugin_default,
 	titles_default,
@@ -4464,6 +4469,7 @@ var virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fplugins_server_default =
 	route_rule_og_image_server_default,
 	robot_meta_server_default,
 	virtual_nuxt_node_modules_2F_cache_2Fnuxt_2F_nuxt_2Fcomponents_plugin_default,
+	plugin,
 	_1_absoluteImageUrls_server_default,
 	_0_routeRules_default,
 	/* @__PURE__ */ defineNuxtPlugin({

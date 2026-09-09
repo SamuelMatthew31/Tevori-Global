@@ -35,16 +35,15 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    // Reverted async approach as it causes 500 runtime errors on Vercel edge functions.
-    // We will use standard nitro config for Nuxt instead.
+    // Setting experimental flag completely bypasses internal prerender loops
+    // causing Nitro issues
+    excludeAppSources: true,
   },
 
-  nitro: {
-    prerender: {
-      // Explicitly tell Vercel to pre-render the entire sitemap.xml at build time
-      // so it never has to generate on the fly
-      routes: ['/sitemap.xml']
-    }
+  // Let Vercel handle standard API routes dynamically without trying to compile them to static HTML during build
+  routeRules: {
+    '/sitemap.xml': { prerender: true },
+    '/api/**': { cors: true }
   },
 
   runtimeConfig: {

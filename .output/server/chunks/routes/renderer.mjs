@@ -220,7 +220,7 @@ const renderSSRHeadOptions = {"omitLineBreaks":true};
 
 const entryIds = ["../node_modules/nuxt/dist/app/entry.js"];
 
-const entryFileName = "C6BzJVL7.js";
+const entryFileName = "ByvIDtWd.js";
 
 //#region src/runtime/handlers/renderer.ts
 globalThis.__buildAssetsURL = buildAssetsURL;
