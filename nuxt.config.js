@@ -35,15 +35,11 @@ export default defineNuxtConfig({
   },
 
   sitemap: {
-    // Setting experimental flag completely bypasses internal prerender loops
-    // causing Nitro issues
-    excludeAppSources: true,
+    // We allow Nuxt to auto-discover standard pages (like /, /insights, /products).
   },
 
-  // Let Vercel handle standard API routes dynamically without trying to compile them to static HTML during build
   routeRules: {
-    '/sitemap.xml': { prerender: true },
-    '/api/**': { cors: true }
+    '/sitemap.xml': { prerender: true }
   },
 
   runtimeConfig: {

@@ -1663,11 +1663,7 @@ var sensitiveMatcher = /* @__PURE__ */ (() => {
 		}
 		let l = s.length;
 		if (l > 1) {
-			if (s[1] === "api") r.push({
-				data: $1,
-				params: { "_": p.slice(5) }
-			});
-			else if (s[1] === "_og") {
+			if (s[1] === "_og") {
 				if (l > 2) {
 					if (s[2] === "d") r.push({
 						data: $1,
