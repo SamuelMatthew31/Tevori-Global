@@ -4612,7 +4612,7 @@ var _sfc_main$4 = {
 		};
 		return (_ctx, _push, _parent, _attrs) => {
 			const _component_NuxtLink = NuxtLink;
-			_push(`<nav${ssrRenderAttrs(mergeProps({ class: "bg-white text-slate-800 fixed w-full z-50 top-0 shadow-sm border-b border-gray-100 h-16 flex items-center" }, _attrs))}><div class="container mx-auto px-4 flex justify-between items-center max-w-7xl"><a href="#home" class="text-xl font-extrabold tracking-wider text-[#737474] uppercase relative z-50 shrink-0 cursor-pointer">${ssrInterpolate(unref(companyInfo).short_name)}</a><ul class="hidden lg:flex space-x-6 text-[13px] font-bold text-slate-600 items-center"><li><a href="#home" class="hover:text-[#737474] transition cursor-pointer">Beranda</a></li><li><a href="#about" class="hover:text-[#737474] transition cursor-pointer">Tentang Kami</a></li><li><a href="#services" class="hover:text-[#737474] transition cursor-pointer">Layanan</a></li><li><a href="#how-we-work" class="hover:text-[#737474] transition cursor-pointer">Cara Kerja</a></li><li><a href="#testimonials" class="hover:text-[#737474] transition cursor-pointer">Testimoni</a></li><li><a href="#insights" class="hover:text-[#737474] transition cursor-pointer">Berita</a></li><li>`);
+			_push(`<nav${ssrRenderAttrs(mergeProps({ class: "bg-white text-slate-800 fixed w-full z-50 top-0 shadow-sm border-b border-gray-100 h-16 flex items-center" }, _attrs))}><div class="container mx-auto px-4 flex justify-between items-center max-w-7xl"><a href="#home" class="flex items-center gap-3 text-xl font-extrabold tracking-wider text-[#737474] uppercase relative z-50 shrink-0 cursor-pointer"><img${ssrRenderAttr("src", "/companyLogo.png")} alt="Tevori Global Logo" class="h-10 w-auto object-contain"><span class="hidden sm:inline-block">${ssrInterpolate(unref(companyInfo).short_name)}</span></a><ul class="hidden lg:flex space-x-6 text-[13px] font-bold text-slate-600 items-center"><li><a href="#home" class="hover:text-[#737474] transition cursor-pointer">Beranda</a></li><li><a href="#about" class="hover:text-[#737474] transition cursor-pointer">Tentang Kami</a></li><li><a href="#services" class="hover:text-[#737474] transition cursor-pointer">Layanan</a></li><li><a href="#how-we-work" class="hover:text-[#737474] transition cursor-pointer">Cara Kerja</a></li><li><a href="#testimonials" class="hover:text-[#737474] transition cursor-pointer">Testimoni</a></li><li><a href="#insights" class="hover:text-[#737474] transition cursor-pointer">Berita</a></li><li>`);
 			_push(ssrRenderComponent(_component_NuxtLink, {
 				to: "/products",
 				class: "hover:text-[#737474] transition"
@@ -4695,18 +4695,7 @@ var _sfc_main$3 = {
 				}),
 				_: 1
 			}, _parent));
-			_push(`</li><li><a href="/#contact" class="hover:text-white transition flex items-center">- Hubungi Kami</a></li><li class="pt-2 border-t border-slate-800">`);
-			_push(ssrRenderComponent(_component_NuxtLink, {
-				to: "/admin",
-				class: "text-slate-400 hover:text-white transition flex items-center font-medium"
-			}, {
-				default: withCtx((_, _push, _parent, _scopeId) => {
-					if (_push) _push(`<span class="mr-1.5"${_scopeId}>🔒</span> Admin CMS Panel `);
-					else return [createVNode("span", { class: "mr-1.5" }, "🔒"), createTextVNode(" Admin CMS Panel ")];
-				}),
-				_: 1
-			}, _parent));
-			_push(`</li></ul></div><div><h3 class="text-white text-base md:text-lg font-bold mb-6">Informasi Kontak</h3><p class="text-xs md:text-sm mb-4 border-b border-slate-700 pb-3 flex items-start"><span class="mr-3 text-lg">📍</span> ${ssrInterpolate(unref(companyInfo).address)}</p><p class="text-xs md:text-sm mb-4 border-b border-slate-700 pb-3 flex items-start"><span class="mr-3 text-lg">📞</span> ${ssrInterpolate(unref(companyInfo).phone)}</p><p class="text-xs md:text-sm flex items-start"><span class="mr-3 text-lg">✉️</span> ${ssrInterpolate(unref(companyInfo).email)}</p></div></div><div class="border-t border-slate-800 mt-10 md:mt-12 pt-6 text-center text-xs text-slate-500 px-4"> © ${ssrInterpolate((/* @__PURE__ */ new Date()).getFullYear())} ${ssrInterpolate(unref(companyInfo).name)}. All rights reserved. Built for global sourcing. </div></footer>`);
+			_push(`</li><li><a href="/#contact" class="hover:text-white transition flex items-center">- Hubungi Kami</a></li></ul></div><div><h3 class="text-white text-base md:text-lg font-bold mb-6">Informasi Kontak</h3><p class="text-xs md:text-sm mb-4 border-b border-slate-700 pb-3 flex items-start"><span class="mr-3 text-lg">📍</span> ${ssrInterpolate(unref(companyInfo).address)}</p><p class="text-xs md:text-sm mb-4 border-b border-slate-700 pb-3 flex items-start"><span class="mr-3 text-lg">📞</span> ${ssrInterpolate(unref(companyInfo).phone)}</p><p class="text-xs md:text-sm flex items-start"><span class="mr-3 text-lg">✉️</span> ${ssrInterpolate(unref(companyInfo).email)}</p></div></div><div class="border-t border-slate-800 mt-10 md:mt-12 pt-6 text-center text-xs text-slate-500 px-4"> © ${ssrInterpolate((/* @__PURE__ */ new Date()).getFullYear())} ${ssrInterpolate(unref(companyInfo).name)}. All rights reserved. Built for global sourcing. </div></footer>`);
 		};
 	}
 };

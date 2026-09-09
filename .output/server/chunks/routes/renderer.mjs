@@ -110,7 +110,7 @@ function lazyCachedFunction(fn) {
 	};
 }
 
-const appHead = {"link":[{"rel":"icon","type":"image/x-icon","href":"/favicon.ico"}],"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"},{"name":"description","content":"Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities, Authentic Balinese Handcrafted Arts."},{"property":"og:type","content":"website"}],"style":[],"script":[],"noscript":[],"title":"PT Tevori Global Indonesia - B2B Export & Buyer Agent","htmlAttrs":{}};
+const appHead = {"link":[{"rel":"icon","type":"image/x-icon","href":"/favicon.ico","sizes":"32x32"}],"meta":[{"name":"viewport","content":"width=device-width, initial-scale=1"},{"charset":"utf-8"},{"name":"description","content":"Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities, Authentic Balinese Handcrafted Arts."},{"property":"og:image","content":"https://tevori-global.vercel.app/companyLogo.png"},{"property":"twitter:image","content":"https://tevori-global.vercel.app/companyLogo.png"},{"property":"og:type","content":"website"}],"style":[],"script":[],"noscript":[],"title":"PT Tevori Global Indonesia - B2B Export & Buyer Agent","htmlAttrs":{}};
 
 const appRootTag = "div";
 
@@ -220,7 +220,7 @@ const renderSSRHeadOptions = {"omitLineBreaks":true};
 
 const entryIds = ["../node_modules/nuxt/dist/app/entry.js"];
 
-const entryFileName = "DHTVCTCS.js";
+const entryFileName = "DbUa2cRz.js";
 
 //#region src/runtime/handlers/renderer.ts
 globalThis.__buildAssetsURL = buildAssetsURL;
