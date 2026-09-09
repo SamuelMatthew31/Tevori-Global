@@ -1652,9 +1652,11 @@ var sensitiveMatcher = /* @__PURE__ */ (() => {
 	return (m, p) => {
 		let r = [];
 		if (p.charCodeAt(p.length - 1) === 47) p = p.slice(0, -1);
-		if (p === "/_nuxt") r.push({ data: $0 });
+		if (p === "/sitemap.xml") r.push({ data: $0 });
+		else if (p === "/_nuxt") r.push({ data: $0 });
 		else if (p.charCodeAt(p.length - 1) === 47) {
-			if (p === "/_nuxt/") r.push({ data: $0 });
+			if (p === "/sitemap.xml/") r.push({ data: $0 });
+			else if (p === "/_nuxt/") r.push({ data: $0 });
 		}
 		let s = p.split("/");
 		if (s.length > 1 && s[s.length - 1] === "") {
