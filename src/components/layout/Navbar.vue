@@ -55,8 +55,9 @@ const scrollToSection = (hash) => {
 <template>
   <nav class="bg-white text-slate-800 fixed w-full z-50 top-0 shadow-sm border-b border-gray-100 h-16 flex items-center">
     <div class="container mx-auto px-4 flex justify-between items-center max-w-7xl">
-      <a href="#home" class="text-xl font-extrabold tracking-wider text-[#737474] uppercase relative z-50 shrink-0 cursor-pointer" @click.prevent="scrollToSection('#home')">
-        {{ companyInfo.short_name }}
+      <a href="#home" class="flex items-center gap-3 text-xl font-extrabold tracking-wider text-[#737474] uppercase relative z-50 shrink-0 cursor-pointer" @click.prevent="scrollToSection('#home')">
+        <img :src="'/companyLogo.png'" alt="Tevori Global Logo" class="h-10 w-auto object-contain" />
+        <span class="hidden sm:inline-block">{{ companyInfo.short_name }}</span>
       </a>
 
       <!-- Desktop Menu -->
@@ -123,3 +124,8 @@ const scrollToSection = (hash) => {
     </transition>
   </nav>
 </template>
+
+
+
+
+

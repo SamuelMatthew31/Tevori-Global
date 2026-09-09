@@ -18,11 +18,6 @@ import { companyInfo } from '@/data/company'
           <li><NuxtLink to="/products" class="hover:text-white transition flex items-center">- Produk / Katalog</NuxtLink></li>
           <li><NuxtLink to="/insights" class="hover:text-white transition flex items-center">- Berita & Artikel</NuxtLink></li>
           <li><a href="/#contact" class="hover:text-white transition flex items-center">- Hubungi Kami</a></li>
-          <li class="pt-2 border-t border-slate-800">
-            <NuxtLink to="/admin" class="text-slate-400 hover:text-white transition flex items-center font-medium">
-              <span class="mr-1.5">🔒</span> Admin CMS Panel
-            </NuxtLink>
-          </li>
         </ul>
       </div>
       <div>
