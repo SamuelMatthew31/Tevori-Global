@@ -12,6 +12,13 @@ export default defineNuxtConfig({
     ],
   },
 
+  runtimeConfig: {
+    public: {
+      sanityProjectId: process.env.SANITY_PROJECT_ID,
+      sanityDataset: process.env.SANITY_DATASET,
+    }
+  },
+
   modules: [
     '@nuxtjs/seo',
     'nitro-cloudflare-dev',
