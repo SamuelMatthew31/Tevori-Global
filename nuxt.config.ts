@@ -13,14 +13,28 @@ export default defineNuxtConfig({
   },
 
   modules: [
-    '@nuxtjs/seo'
+    '@nuxtjs/seo',
+    'nitro-cloudflare-dev',
   ],
+
+  ogImage: {
+    enabled: false
+  },
 
   site: {
     url: 'https://tevori-global.vercel.app',
     name: 'PT Tevori Global Indonesia',
     description: 'Official B2B Export and Sourcing Buyer Agent for Indonesia. Sourcing Indonesian Teak Furniture, Coffee & Coconut Commodities.',
     defaultLocale: 'en',
+  },
+
+  nitro: {
+    preset: "cloudflare_module",
+
+    cloudflare: {
+      deployConfig: true,
+      nodeCompat: true
+    }
   },
 
   seo: {

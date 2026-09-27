@@ -7,15 +7,17 @@
     "dev": "nuxt dev",
     "build": "nuxt build",
     "generate": "nuxt generate",
-    "preview": "nuxt preview",
+    "preview": "npm run build && wrangler dev",
     "dev:vite": "vite",
-    "build:vite": "vite build"
+    "build:vite": "vite build",
+    "deploy": "npm run build && wrangler deploy"
   },
   "dependencies": {
     "@lucide/vue": "^1.39.0",
     "@nuxtjs/seo": "^5.3.14",
     "@sanity/client": "^8.6.1",
     "@takumi-rs/core": "^2.13.7",
+    "@takumi-rs/wasm": "^2.14.0",
     "lucide-vue-next": "^1.0.0",
     "nuxt": "^4.5.2",
     "vue": "^3.5.40",
@@ -24,9 +26,11 @@
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
     "@vitejs/plugin-vue": "^6.0.8",
+    "nitro-cloudflare-dev": "^0.2.2",
     "tailwindcss": "^4.3.3",
     "vite": "^8.1.5",
-    "vite-plugin-vue-devtools": "^8.1.5"
+    "vite-plugin-vue-devtools": "^8.1.5",
+    "wrangler": "^4.141.0"
   },
   "engines": {
     "node": "^22.18.0 || >=24.12.0"
